@@ -40,6 +40,10 @@ private:
     // Camera
     std::unique_ptr<grassland::graphics::Buffer> camera_object_buffer_;
     
+    std::unique_ptr<grassland::graphics::Buffer> vertex_data_buffer_;
+    std::unique_ptr<grassland::graphics::Buffer> index_data_buffer_;
+    std::unique_ptr<grassland::graphics::Buffer> entity_offset_buffer_;
+    
     // Hover info buffer
     struct HoverInfo {
         int hovered_entity_id;

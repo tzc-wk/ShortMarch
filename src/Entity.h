@@ -20,6 +20,24 @@ public:
     const Material& GetMaterial() const { return material_; }
     const glm::mat4& GetTransform() const { return transform_; }
     grassland::graphics::AccelerationStructure* GetBLAS() const { return blas_.get(); }
+    
+    const Eigen::Vector3f* GetMeshPositions() const { return mesh_.Positions(); }
+    const uint32_t* GetMeshIndices() const { return mesh_.Indices(); }
+    uint32_t GetVertexCount() const { return mesh_.NumVertices(); }
+    uint32_t GetIndexCount() const { return mesh_.NumIndices(); }
+    
+    std::vector<float> GetMeshPositionsAsFloatArray() const {
+        const Eigen::Vector3f* positions = mesh_.Positions();
+        uint32_t vertex_count = mesh_.NumVertices();
+        std::vector<float> result(vertex_count * 3);
+        
+        for (uint32_t i = 0; i < vertex_count; i++) {
+            result[i * 3 + 0] = positions[i].x();
+            result[i * 3 + 1] = positions[i].y();
+            result[i * 3 + 2] = positions[i].z();
+        }
+        return result;
+    }
 
     // Setters
     void SetMaterial(const Material& material) { material_ = material; }

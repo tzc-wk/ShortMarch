@@ -225,7 +225,7 @@ void Application::OnInit() {
     {
         auto ground = std::make_shared<Entity>(
             "meshes/cube.obj",
-            Material(glm::vec3(0.2f, 0.2f, 0.2f), 0.8f, 0.0f),
+            Material(glm::vec3(0.4f, 0.4f, 0.4f), 0.8f, 0.0f),
             glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, -1.0f, 0.0f)), 
                       glm::vec3(10.0f, 0.1f, 10.0f))
         );
@@ -246,7 +246,7 @@ void Application::OnInit() {
     {
         auto green_sphere = std::make_shared<Entity>(
             "meshes/octahedron.obj",
-            Material(glm::vec3(0.2f, 1.0f, 0.2f), 0.2f, 0.8f),
+            Material(glm::vec3(0.2f, 1.0f, 0.2f), 0.8f, 0.9f),
             glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.5f, 0.0f))
         );
         scene_->AddEntity(green_sphere);
@@ -264,6 +264,7 @@ void Application::OnInit() {
 
     // Build acceleration structures
     scene_->BuildAccelerationStructures();
+    scene_->BuildVertexIndexData();
 
     // Create film for accumulation
     film_ = std::make_unique<Film>(core_.get(), window_->GetWidth(), window_->GetHeight());
@@ -325,7 +326,10 @@ void Application::OnInit() {
     program_->AddResourceBinding(grassland::graphics::RESOURCE_TYPE_WRITABLE_IMAGE, 1);          // space5 - entity ID output
     program_->AddResourceBinding(grassland::graphics::RESOURCE_TYPE_WRITABLE_IMAGE, 1);          // space6 - accumulated color
     program_->AddResourceBinding(grassland::graphics::RESOURCE_TYPE_WRITABLE_IMAGE, 1);          // space7 - accumulated samples
-    program_->Finalize();
+    program_->AddResourceBinding(grassland::graphics::RESOURCE_TYPE_STORAGE_BUFFER, 1);
+    program_->AddResourceBinding(grassland::graphics::RESOURCE_TYPE_STORAGE_BUFFER, 1);
+    program_->AddResourceBinding(grassland::graphics::RESOURCE_TYPE_STORAGE_BUFFER, 1);
+	program_->Finalize();
 }
 
 void Application::OnClose() {
@@ -794,7 +798,10 @@ void Application::OnRender() {
     command_context->CmdBindResources(5, { entity_id_image_.get() }, grassland::graphics::BIND_POINT_RAYTRACING);
     command_context->CmdBindResources(6, { film_->GetAccumulatedColorImage() }, grassland::graphics::BIND_POINT_RAYTRACING);
     command_context->CmdBindResources(7, { film_->GetAccumulatedSamplesImage() }, grassland::graphics::BIND_POINT_RAYTRACING);
-    command_context->CmdDispatchRays(window_->GetWidth(), window_->GetHeight(), 1);
+    command_context->CmdBindResources(8, { scene_->GetVertexDataBuffer() }, grassland::graphics::BIND_POINT_RAYTRACING);
+    command_context->CmdBindResources(9, { scene_->GetIndexDataBuffer() }, grassland::graphics::BIND_POINT_RAYTRACING);
+    command_context->CmdBindResources(10, { scene_->GetEntityOffsetBuffer() }, grassland::graphics::BIND_POINT_RAYTRACING);
+	command_context->CmdDispatchRays(window_->GetWidth(), window_->GetHeight(), 1);
     
     // When camera is disabled, increment sample count and use accumulated image
     grassland::graphics::Image* display_image = color_image_.get();

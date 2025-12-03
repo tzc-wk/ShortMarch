@@ -13,6 +13,13 @@ struct HoverInfo {
   int hovered_entity_id;
 };
 
+struct EntityOffset {
+    uint vertex_offset;
+    uint index_offset;
+    uint vertex_count;
+    uint index_count;
+};
+
 RaytracingAccelerationStructure as : register(t0, space0);
 RWTexture2D<float4> output : register(u0, space1);
 ConstantBuffer<CameraInfo> camera_info : register(b0, space2);
@@ -21,6 +28,9 @@ ConstantBuffer<HoverInfo> hover_info : register(b0, space4);
 RWTexture2D<int> entity_id_output : register(u0, space5);
 RWTexture2D<float4> accumulated_color : register(u0, space6);
 RWTexture2D<int> accumulated_samples : register(u0, space7);
+ByteAddressBuffer vertex_buffer : register(t0, space8);
+ByteAddressBuffer index_buffer : register(t0, space9);
+StructuredBuffer<EntityOffset> entity_offsets : register(t0, space10);
 
 struct RayPayload {
   float3 color;
@@ -52,14 +62,34 @@ bool RussianRoulette(float throughput, inout uint seed) {
     return true;
 }
 float3 reflect(float3 I, float3 N) {return I - 2.0 * dot(I, N) * N;}
-float3 calcNormal(int material_idx, float3 hit_point) {
-  PrimitiveIndex();
-  float3 object_center = float3(0, 0, 0);
-  if (material_idx == 0) return float3(0, 1, 0);
-  else if (material_idx == 1) object_center = float3(-2, 0.5, 0);
-  else if (material_idx == 2) object_center = float3(0, 0.5, 0);
-  else if (material_idx == 3) object_center = float3(2, 0.5, 0);
-  return normalize(hit_point - object_center);
+float3 LoadFloat3ByVertexIndex(ByteAddressBuffer buffer, uint vertex_index) {
+    uint byte_offset = vertex_index * 12;
+    float x = asfloat(buffer.Load(byte_offset));
+    float y = asfloat(buffer.Load(byte_offset + 4));
+    float z = asfloat(buffer.Load(byte_offset + 8));
+    return float3(x, y, z);
+}
+uint LoadUintByIndex(ByteAddressBuffer buffer, uint index_position) {
+    uint byte_offset = index_position * 4;
+    return buffer.Load(byte_offset);
+}
+float3 calcNormal(uint instance_id, uint primitive_index, float3 hit_point) {
+    EntityOffset offset = entity_offsets[instance_id];
+    uint index_pos = offset.index_offset + primitive_index * 3;
+    uint idx0 = LoadUintByIndex(index_buffer, index_pos + 0);
+    uint idx1 = LoadUintByIndex(index_buffer, index_pos + 1);
+    uint idx2 = LoadUintByIndex(index_buffer, index_pos + 2);
+    float3 v0 = LoadFloat3ByVertexIndex(vertex_buffer, idx0);
+    float3 v1 = LoadFloat3ByVertexIndex(vertex_buffer, idx1);
+    float3 v2 = LoadFloat3ByVertexIndex(vertex_buffer, idx2);
+    float3 edge1 = v1 - v0;
+    float3 edge2 = v2 - v0;
+    float3 normal = normalize(cross(edge1, edge2));
+    float3 view_dir = normalize(-WorldRayDirection());
+    if (dot(normal, view_dir) < 0.0) {
+        normal = -normal;
+    }
+    return normal;
 }
 
 float3 CalculateDirectLight(float3 hit_point, float3 normal, Material mat, float3 view_dir) {
@@ -118,18 +148,18 @@ void RayGenMain() {
 [shader("miss")] 
 void MissMain(inout RayPayload payload) {
   float t = 0.5 * (normalize(WorldRayDirection()).y + 1.0);
-  payload.color = lerp(float3(0.1, 0, 0.05), float3(0.3, 0.1, 0.2), t) * payload.throughput;
+  payload.color = lerp(float3(1, 1, 1), float3(0.5, 0.7, 1.0), t) * payload.throughput;
   payload.hit = false;
   payload.instance_id = 0xFFFFFFFF;
 }
 [shader("closesthit")] 
 void ClosestHitMain(inout RayPayload payload, in BuiltInTriangleIntersectionAttributes attr) {
   payload.hit = true;
-  uint material_idx = InstanceID();
+  uint material_idx = InstanceID(), primitive_index = PrimitiveIndex();
   payload.instance_id = material_idx;
   payload.hit_distance = RayTCurrent();
   payload.hit_point = WorldRayOrigin() + WorldRayDirection() * payload.hit_distance;
-  payload.normal = calcNormal(material_idx, payload.hit_point);
+  payload.normal = calcNormal(material_idx, primitive_index, payload.hit_point);
   Material mat = materials[material_idx];
   float3 view_dir = normalize(-WorldRayDirection());
   float3 direct_light = CalculateDirectLight(payload.hit_point, payload.normal, mat, view_dir);

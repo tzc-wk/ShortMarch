@@ -34,9 +34,27 @@ public:
 
     // Get number of entities
     size_t GetEntityCount() const { return entities_.size(); }
+    
+    grassland::graphics::Buffer* GetVertexDataBuffer() const { return vertex_data_buffer_.get(); }
+    grassland::graphics::Buffer* GetIndexDataBuffer() const { return index_data_buffer_.get(); }
+    grassland::graphics::Buffer* GetEntityOffsetBuffer() const { return entity_offset_buffer_.get(); }
+    
+    void BuildVertexIndexData();
 
 private:
     void UpdateMaterialsBuffer();
+    
+    struct EntityOffset {
+        uint32_t vertex_offset;
+        uint32_t index_offset;
+        uint32_t vertex_count;
+        uint32_t index_count;
+    };
+    
+    std::unique_ptr<grassland::graphics::Buffer> vertex_data_buffer_;
+    std::unique_ptr<grassland::graphics::Buffer> index_data_buffer_;
+    std::unique_ptr<grassland::graphics::Buffer> entity_offset_buffer_;
+    std::vector<EntityOffset> entity_offsets_;
 
     grassland::graphics::Core* core_;
     std::vector<std::shared_ptr<Entity>> entities_;

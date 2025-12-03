@@ -120,3 +120,48 @@ void Scene::UpdateMaterialsBuffer() {
     grassland::LogInfo("Updated materials buffer with {} materials", materials.size());
 }
 
+void Scene::BuildVertexIndexData() {
+    if (entities_.empty()) return;
+    std::vector<float> all_vertices;
+    std::vector<uint32_t> all_indices;
+    entity_offsets_.clear();
+    uint32_t vertex_offset = 0;
+    uint32_t index_offset = 0;
+    for (const auto& entity : entities_) {
+        std::vector<float> positions = entity->GetMeshPositionsAsFloatArray();
+        const uint32_t* indices = entity->GetMeshIndices();
+        uint32_t vertex_count = entity->GetVertexCount();
+        uint32_t index_count = entity->GetIndexCount();
+        EntityOffset offset;
+        offset.vertex_offset = vertex_offset;
+        offset.index_offset = index_offset;
+        offset.vertex_count = vertex_count;
+        offset.index_count = index_count;
+        entity_offsets_.push_back(offset);
+        all_vertices.insert(all_vertices.end(), positions.begin(), positions.end());
+        for (uint32_t i = 0; i < index_count; i++) {
+            all_indices.push_back(indices[i] + vertex_offset);
+        }
+        vertex_offset += vertex_count;
+        index_offset += index_count;
+    }
+    size_t vertex_buffer_size = all_vertices.size() * sizeof(float);
+    size_t index_buffer_size = all_indices.size() * sizeof(uint32_t);
+    size_t offset_buffer_size = entity_offsets_.size() * sizeof(EntityOffset);
+    core_->CreateBuffer(vertex_buffer_size, 
+                       grassland::graphics::BUFFER_TYPE_DYNAMIC,
+                       &vertex_data_buffer_);
+    core_->CreateBuffer(index_buffer_size,
+                       grassland::graphics::BUFFER_TYPE_DYNAMIC,
+                       &index_data_buffer_);
+    core_->CreateBuffer(offset_buffer_size,
+                       grassland::graphics::BUFFER_TYPE_DYNAMIC,
+                       &entity_offset_buffer_);
+    vertex_data_buffer_->UploadData(all_vertices.data(), vertex_buffer_size);
+    index_data_buffer_->UploadData(all_indices.data(), index_buffer_size);
+    entity_offset_buffer_->UploadData(entity_offsets_.data(), offset_buffer_size);
+    
+    grassland::LogInfo("Built vertex/index buffers: {} vertices ({} floats), {} indices across {} entities",
+                      all_vertices.size() / 3, all_vertices.size(), 
+                      all_indices.size(), entities_.size());
+}

@@ -225,7 +225,7 @@ void Application::OnInit() {
     {
         auto ground = std::make_shared<Entity>(
             "meshes/cube.obj",
-            Material(glm::vec3(0.8f, 0.8f, 0.8f), 0.8f, 0.0f),
+            Material(glm::vec3(0.2f, 0.2f, 0.2f), 0.8f, 0.0f),
             glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, -1.0f, 0.0f)), 
                       glm::vec3(10.0f, 0.1f, 10.0f))
         );

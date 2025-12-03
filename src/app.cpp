@@ -225,7 +225,7 @@ void Application::OnInit() {
 	{
 		auto ground = std::make_shared<Entity>(
 			"meshes/cube.obj",
-			Material(glm::vec3(0.4f, 0.4f, 0.4f), 0.8f, 0.0f),
+			Material(glm::vec3(0.8f, 0.8f, 0.8f), 0.8f, 0.0f),
 			glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, -1.0f, 0.0f)), 
 			glm::vec3(10.0f, 0.1f, 10.0f))
 		);
@@ -251,7 +251,7 @@ void Application::OnInit() {
 		auto blue_cube = std::make_shared<Entity>(
 			"meshes/cube.obj",
 			Material(glm::vec3(0.2f, 0.2f, 1.0f), 0.5f, 0.0f),
-			glm::translate(glm::mat4(1.0f), glm::vec3(2.0f, 0.5f, 0.0f))
+			glm::translate(glm::mat4(1.0f), glm::vec3(2.6f, 0.5f, 0.0f))
 		);
 		scene_->AddEntity(blue_cube);
 	}
@@ -290,7 +290,7 @@ void Application::OnInit() {
     // Initialize camera state member variables
     camera_pos_ = glm::vec3{ 0.0f, 1.0f, 5.0f };
     camera_up_ = glm::vec3{ 0.0f, 1.0f, 0.0f }; // World up
-    camera_speed_ = 0.01f;
+    camera_speed_ = 0.03f;
 
     // Initialize new mouse/view variables
     yaw_ = -90.0f; // Point down -Z
@@ -559,7 +559,7 @@ void Application::RenderInfoOverlay() {
     ImGui::SeparatorText("Camera");
     ImGui::Text("Position: (%.2f, %.2f, %.2f)", camera_pos_.x, camera_pos_.y, camera_pos_.z);
     ImGui::Text("Direction: (%.2f, %.2f, %.2f)", camera_front_.x, camera_front_.y, camera_front_.z);
-    ImGui::Text("Yaw: %.1f°  Pitch: %.1f°", yaw_, pitch_);
+    ImGui::Text("Yaw: %.1f掳  Pitch: %.1f掳", yaw_, pitch_);
     ImGui::Text("Speed: %.3f", camera_speed_);
     ImGui::Text("Sensitivity: %.2f", mouse_sensitivity_);
 

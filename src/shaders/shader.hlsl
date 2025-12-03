@@ -95,7 +95,7 @@ float3 calcNormal(uint instance_id, uint primitive_index, float3 hit_point) {
 float3 CalculateDirectLight(float3 hit_point, float3 normal, Material mat, float3 view_dir) {
   float3 light_pos = float3(3, 5, 2);
   float3 light_color = float3(1.0, 0.95, 0.9);
-  float light_intensity = 0.2;
+  float light_intensity = 1.2;
   float3 light_dir = normalize(light_pos - hit_point);
   float ndotl = max(0.0, dot(normal, light_dir));
   float3 diffuse = mat.base_color * ndotl;

@@ -134,6 +134,7 @@ bool TestShadow(float3 hit_point, float3 light_pos) {
     float3 light_to_point = hit_point - light_pos;
     float total_distance = length(light_to_point);
     float3 light_dir = normalize(light_to_point);
+    if (total_distance < 0.005) return false;
     RayPayload shadow_payload;
     shadow_payload.hit = false;
     shadow_payload.instance_id = 0xFFFFFFFF;

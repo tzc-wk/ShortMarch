@@ -6,6 +6,8 @@ struct Material {
     float3 base_color;
     float roughness;
     float metallic;
+    float transmission;
+    float ior;
 };
 struct HoverInfo {
     int hovered_entity_id;
@@ -48,12 +50,11 @@ struct RayPayload {
     float hit_distance;
     uint depth;
     float throughput;
+    bool inside_material;
 };
 #define MAX_DEPTH 3
 #define PI 3.14159265358979323846
 #define AREA_LIGHT_SAMPLES 1
-
-// light information
 
 static const PointLight POINT_LIGHT = {
     float3(0, 3, 0),
@@ -67,7 +68,7 @@ static const AreaLight AREA_LIGHT = {
     2.0,
     1.0,
     float3(1.0, 0.9, 0.8),
-    15.0
+    8.0
 };
 static const float3 AMBIENT_COLOR = float3(1.0, 1.0, 1.0);
 static const float AMBIENT_INTENSITY = 0.2;
@@ -89,6 +90,14 @@ bool RussianRoulette(float throughput, inout uint seed) {
     return true;
 }
 float3 reflect(float3 I, float3 N) {return I - 2.0 * dot(I, N) * N;}
+float3 refract(float3 I, float3 N, float eta) {
+    float NdotI = dot(N, I);
+    float k = 1.0 - eta * eta * (1.0 - NdotI * NdotI);
+    if (k < 0.0) {
+        return reflect(-I, N);
+    }
+    return eta * I - (eta * NdotI + sqrt(k)) * N;
+}
 float3 LoadFloat3ByVertexIndex(ByteAddressBuffer buffer, uint vertex_index) {
     uint byte_offset = vertex_index * 12;
     float x = asfloat(buffer.Load(byte_offset));
@@ -116,26 +125,51 @@ float3 calcNormal(uint instance_id, uint primitive_index, float3 hit_point) {
     if (dot(normal, view_dir) < 0.0) normal = -normal;
     return normal;
 }
-bool TestShadow(float3 hit_point, float3 light_pos) {
+float TestShadow(float3 hit_point, float3 light_pos) {
     float3 light_to_point = hit_point - light_pos;
     float total_distance = length(light_to_point);
     float3 light_dir = normalize(light_to_point);
-    if (total_distance < 0.005) return false;
-    RayPayload shadow_payload;
-    shadow_payload.color = float3(0, 0, 0); shadow_payload.hit = false;
-    shadow_payload.instance_id = 0xFFFFFFFF; shadow_payload.hit_distance = 10000.0;
-    shadow_payload.depth = 100; shadow_payload.throughput = 0.0;
-    RayDesc shadow_ray;
-    shadow_ray.Origin = light_pos + light_dir * 0.001; shadow_ray.Direction = light_dir;
-    shadow_ray.TMin = 0.001; shadow_ray.TMax = total_distance - 0.002;
-    TraceRay(as, RAY_FLAG_FORCE_OPAQUE | RAY_FLAG_ACCEPT_FIRST_HIT_AND_END_SEARCH, 0xFF, 0, 0, 0, shadow_ray, shadow_payload);
-    return shadow_payload.hit && (shadow_payload.hit_distance < total_distance - 0.001);
+    if (total_distance < 0.005) return 1.0;
+    float transmission_factor = 1.0;
+    float current_distance = 0.001;
+    float3 ray_origin = light_pos + light_dir * 0.001;
+    while (current_distance < total_distance - 0.003) {
+        RayPayload shadow_payload;
+        shadow_payload.color = float3(0, 0, 0);
+        shadow_payload.hit = false;
+        shadow_payload.instance_id = 0xFFFFFFFF;
+        shadow_payload.hit_distance = 10000.0;
+        shadow_payload.depth = 100;
+        shadow_payload.throughput = 0.0;
+        shadow_payload.inside_material = false;
+        RayDesc shadow_ray;
+        shadow_ray.Origin = ray_origin;
+        shadow_ray.Direction = light_dir;
+        shadow_ray.TMin = 0.001;
+        shadow_ray.TMax = total_distance - current_distance - 0.001;
+        TraceRay(as, RAY_FLAG_FORCE_OPAQUE | RAY_FLAG_ACCEPT_FIRST_HIT_AND_END_SEARCH, 
+                 0xFF, 0, 0, 0, shadow_ray, shadow_payload);
+        if (!shadow_payload.hit) break;
+        if (shadow_payload.instance_id != 0xFFFFFFFF) {
+            Material hit_mat = materials[shadow_payload.instance_id];
+            if (hit_mat.transmission > 0.0) {
+                transmission_factor *= hit_mat.transmission;
+                ray_origin = ray_origin + light_dir * (shadow_payload.hit_distance + 0.001);
+                current_distance += shadow_payload.hit_distance + 0.001;
+                continue;
+            }
+            else return 0.0;
+        }
+        break;
+    }
+    return transmission_factor;
 }
 float3 CalculatePointLightContribution(float3 hit_point, float3 normal, Material mat, float3 view_dir, PointLight light) {
     float3 light_dir = normalize(light.position - hit_point);
     float light_distance = length(light.position - hit_point);
     float attenuation = light.intensity / (light_distance * light_distance + 0.001);
-    if (TestShadow(hit_point, light.position)) return float3(0, 0, 0);
+    float shadow_factor = TestShadow(hit_point, light.position);
+    if (shadow_factor <= 0.001) return float3(0, 0, 0);
     float ndotl = max(0.0, dot(normal, light_dir));
     if (ndotl <= 0.0) return float3(0, 0, 0);
     float diffuse_factor = 1.0 - mat.metallic;
@@ -146,7 +180,7 @@ float3 CalculatePointLightContribution(float3 hit_point, float3 normal, Material
     float specular_intensity = pow(ndoth, specular_power);
     float metallic_factor = 0.2 + mat.metallic * 0.8;
     float3 specular = attenuation * light.color * mat.base_color * specular_intensity * metallic_factor;
-    return diffuse + specular;
+    return shadow_factor * (diffuse + specular);
 }
 float3 SampleAreaLight(AreaLight light, float2 random_uv) {
     float3 up = normalize(cross(light.normal, light.left));
@@ -192,16 +226,17 @@ void RayGenMain() {
     RayPayload payload;
     payload.color = float3(0, 0, 0); payload.hit = false; payload.instance_id = 0;
     payload.hit_distance = 0.0; payload.depth = 0; payload.throughput = 1.0;
+    payload.inside_material = false;
     RayDesc ray;
     ray.Origin = origin.xyz; ray.Direction = normalize(direction.xyz);
     ray.TMin = 0.001; ray.TMax = 10000.0;
     TraceRay(as, RAY_FLAG_NONE, 0xFF, 0, 1, 0, ray, payload);
     output[pixel_coords] = float4(payload.color, 1);
-    // trace another ray to get the entity id
     RayPayload test_payload;
     test_payload.color = float3(0, 0, 0); test_payload.hit = false;
     test_payload.instance_id = 0; test_payload.hit_distance = 10000.0;
     test_payload.depth = 100; test_payload.throughput = 0.0;
+    test_payload.inside_material = false;
     TraceRay(as, RAY_FLAG_NONE, 0xFF, 0, 1, 0, ray, test_payload);
     entity_id_output[pixel_coords] = test_payload.hit ? (int)test_payload.instance_id : -1;
     float4 prev_color = accumulated_color[pixel_coords];
@@ -217,8 +252,12 @@ void MissMain(inout RayPayload payload) {
 }
 [shader("closesthit")]
 void ClosestHitMain(inout RayPayload payload, in BuiltInTriangleIntersectionAttributes attr) {
-    uint material_idx = InstanceID(), primitive_index = PrimitiveIndex(); Material mat = materials[material_idx];
-    payload.hit = true; payload.instance_id = material_idx; payload.hit_distance = RayTCurrent();
+    uint material_idx = InstanceID(), primitive_index = PrimitiveIndex(); 
+    Material mat = materials[material_idx];
+    payload.hit = true; 
+    payload.instance_id = material_idx; 
+    payload.hit_distance = RayTCurrent();
+    if (payload.depth == 100) return; // marking it as test ray
     float3 hit_point = WorldRayOrigin() + WorldRayDirection() * payload.hit_distance;
     float3 norm = calcNormal(material_idx, primitive_index, hit_point);
     float3 view_dir = normalize(-WorldRayDirection());
@@ -229,18 +268,53 @@ void ClosestHitMain(inout RayPayload payload, in BuiltInTriangleIntersectionAttr
     if (payload.depth < MAX_DEPTH) {
         float reflectivity = min((1.0 - mat.roughness) * (0.3 + mat.metallic * 0.8), 1.0);
         if (reflectivity < 0.01) return;
+        float reflection_prob = reflectivity;
+        float refraction_prob = mat.transmission * (1.0 - reflectivity);
+        float absorption_prob = 1.0 - reflection_prob - refraction_prob;
+        absorption_prob = max(absorption_prob, 0.0);
         bool should_trace = RussianRoulette(payload.throughput * reflectivity, seed);
-        if (should_trace && reflectivity > 0.05) {
+        if (!should_trace) return;
+        float random_val = Random(seed);
+        if (random_val < reflection_prob) {
             float3 reflect_dir = reflect(-view_dir, norm);
             RayDesc reflect_ray;
-            reflect_ray.Origin = hit_point + norm * 0.001; reflect_ray.Direction = reflect_dir;
-            reflect_ray.TMin = 0.001; reflect_ray.TMax = 10000.0;
+            reflect_ray.Origin = hit_point + norm * 0.001;
+            reflect_ray.Direction = reflect_dir;
+            reflect_ray.TMin = 0.001;
+            reflect_ray.TMax = 10000.0;
             RayPayload reflect_payload;
-            reflect_payload.color = float3(0, 0, 0); reflect_payload.hit = false;
-            reflect_payload.instance_id = 0; reflect_payload.hit_distance = 0.0;
-            reflect_payload.depth = payload.depth + 1; reflect_payload.throughput = payload.throughput * reflectivity;
+            reflect_payload.color = float3(0, 0, 0);
+            reflect_payload.hit = false;
+            reflect_payload.instance_id = 0;
+            reflect_payload.hit_distance = 0.0;
+            reflect_payload.depth = payload.depth + 1;
+            reflect_payload.throughput = payload.throughput * reflectivity;
+            reflect_payload.inside_material = payload.inside_material;
             TraceRay(as, RAY_FLAG_NONE, 0xFF, 0, 1, 0, reflect_ray, reflect_payload);
             payload.color += reflect_payload.color;
         }
+        else if (random_val < reflection_prob + refraction_prob && refraction_prob > 0.001) {
+            float3 refract_dir;
+            if (payload.inside_material) refract_dir = refract(-view_dir, norm, 1.0 / mat.ior);
+            else refract_dir = refract(-view_dir, norm, mat.ior);
+            if (dot(refract_dir, refract_dir) < 0.001) refract_dir = reflect(-view_dir, norm);
+            refract_dir = normalize(refract_dir);
+            RayDesc refract_ray;
+            refract_ray.Origin = hit_point - norm * 0.001;
+            refract_ray.Direction = refract_dir;
+            refract_ray.TMin = 0.001;
+            refract_ray.TMax = 10000.0;
+            RayPayload refract_payload;
+            refract_payload.color = float3(0, 0, 0);
+            refract_payload.hit = false;
+            refract_payload.instance_id = 0;
+            refract_payload.hit_distance = 0.0;
+            refract_payload.depth = payload.depth + 1;
+            refract_payload.throughput = payload.throughput * mat.transmission * (1.0 - reflectivity);
+            refract_payload.inside_material = !payload.inside_material;
+            TraceRay(as, RAY_FLAG_NONE, 0xFF, 0, 1, 0, refract_ray, refract_payload);
+            payload.color += refract_payload.color;
+        }
+        else return;
     }
 }

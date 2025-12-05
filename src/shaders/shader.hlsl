@@ -257,7 +257,7 @@ void ClosestHitMain(inout RayPayload payload, in BuiltInTriangleIntersectionAttr
     payload.hit = true; 
     payload.instance_id = material_idx; 
     payload.hit_distance = RayTCurrent();
-    if (payload.depth == 100) return; // marking it as test ray
+    if (payload.depth == 100) return; // test ray
     float3 hit_point = WorldRayOrigin() + WorldRayDirection() * payload.hit_distance;
     float3 norm = calcNormal(material_idx, primitive_index, hit_point);
     float3 view_dir = normalize(-WorldRayDirection());

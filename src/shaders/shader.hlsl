@@ -63,12 +63,13 @@ struct RayPayload {
 #define PI 3.14159265358979323846
 #define AREA_LIGHT_SAMPLES 1
 
+// light information
+
 static const PointLight POINT_LIGHT = {
     float3(0, 3, 0),
     float3(1.0, 0.95, 0.9),
-    12.0
+    0
 };
-
 static const AreaLight AREA_LIGHT = {
     float3(2, 2.5, 0),
     normalize(float3(0, -1, 0)),
@@ -76,21 +77,18 @@ static const AreaLight AREA_LIGHT = {
     2.0,
     1.0,
     float3(1.0, 0.9, 0.8),
-    0
+    15.0
 };
-
 static const float3 AMBIENT_COLOR = float3(1.0, 1.0, 1.0);
 static const float AMBIENT_INTENSITY = 0.2;
 
 uint RandomSeed(uint2 pixel, uint depth, uint frame) {return (pixel.x * 73856093u) ^ (pixel.y * 19349663u) ^ (depth * 83492789u) ^ (frame * 735682483u);}
-
 float Random(inout uint seed) {
     seed = seed * 747796405u + 2891336453u;
     uint result = ((seed >> ((seed >> 28u) + 4u)) ^ seed) * 277803737u;
     result = (result >> 22u) ^ result;
     return float(result) / 4294967295.0;
 }
-
 bool RussianRoulette(float throughput, inout uint seed) {
     if (throughput < 0.05) {
         float r = Random(seed);
@@ -102,9 +100,7 @@ bool RussianRoulette(float throughput, inout uint seed) {
     }
     return true;
 }
-float3 reflect(float3 I, float3 N) {
-    return I - 2.0 * dot(I, N) * N;
-}
+float3 reflect(float3 I, float3 N) {return I - 2.0 * dot(I, N) * N;}
 float3 LoadFloat3ByVertexIndex(ByteAddressBuffer buffer, uint vertex_index) {
     uint byte_offset = vertex_index * 12;
     float x = asfloat(buffer.Load(byte_offset));
@@ -115,6 +111,24 @@ float3 LoadFloat3ByVertexIndex(ByteAddressBuffer buffer, uint vertex_index) {
 uint LoadUintByIndex(ByteAddressBuffer buffer, uint index_position) {
     uint byte_offset = index_position * 4;
     return buffer.Load(byte_offset);
+}
+float3 calcNormal(uint instance_id, uint primitive_index, float3 hit_point) {
+    EntityOffset offset = entity_offsets[instance_id];
+    uint index_pos = offset.index_offset + primitive_index * 3;
+    uint idx0 = LoadUintByIndex(index_buffer, index_pos + 0);
+    uint idx1 = LoadUintByIndex(index_buffer, index_pos + 1);
+    uint idx2 = LoadUintByIndex(index_buffer, index_pos + 2);
+    float3 v0 = LoadFloat3ByVertexIndex(vertex_buffer, idx0);
+    float3 v1 = LoadFloat3ByVertexIndex(vertex_buffer, idx1);
+    float3 v2 = LoadFloat3ByVertexIndex(vertex_buffer, idx2);
+    float3 edge1 = v1 - v0;
+    float3 edge2 = v2 - v0;
+    float3 normal = normalize(cross(edge1, edge2));
+    float3 view_dir = normalize(-WorldRayDirection());
+    if (dot(normal, view_dir) < 0.0) {
+        normal = -normal;
+    }
+    return normal;
 }
 bool TestShadow(float3 hit_point, float3 light_pos) {
     float3 light_to_point = hit_point - light_pos;
@@ -150,29 +164,23 @@ float3 CalculatePointLightContribution(float3 hit_point, float3 normal, Material
     float3 specular = attenuation * light.color * mat.base_color * specular_intensity * metallic_factor;
     return diffuse + specular;
 }
-float3 SampleAreaLight(AreaLight light, float2 random_uv, out float pdf) {
-    float3 right = normalize(cross(light.normal, light.left));
-    float3 up = light.left;
+float3 SampleAreaLight(AreaLight light, float2 random_uv) {
+    float3 up = normalize(cross(light.normal, light.left));
+    float3 left = light.left;
     float u = (random_uv.x - 0.5) * light.width;
     float v = (random_uv.y - 0.5) * light.height;
-    float3 sample_point = light.center + right * u + up * v;
-    pdf = 1.0 / (light.width * light.height);
-    return sample_point;
+    return light.center + up * u + left * v;
 }
 float3 CalculateAreaLightContribution(float3 hit_point, float3 normal, Material mat, float3 view_dir, AreaLight light, inout uint seed) {
     float3 total_contribution = float3(0, 0, 0);
     for (int i = 0; i < AREA_LIGHT_SAMPLES; i++) {
-        float pdf;
         float2 random_uv = float2(Random(seed), Random(seed));
-        float3 light_sample = SampleAreaLight(light, random_uv, pdf);
-        if (any(isnan(light_sample))) continue;
+        float3 light_sample = SampleAreaLight(light, random_uv);
         PointLight sample_light;
         sample_light.position = light_sample;
         sample_light.color = light.color;
         sample_light.intensity = light.intensity / float(AREA_LIGHT_SAMPLES);
-        float3 sample_contribution = CalculatePointLightContribution(hit_point, normal, mat, view_dir, sample_light);
-        if (any(isnan(sample_contribution))) continue;
-        total_contribution += sample_contribution;
+        total_contribution += CalculatePointLightContribution(hit_point, normal, mat, view_dir, sample_light);
     }
     return total_contribution;
 }
@@ -183,24 +191,6 @@ float3 CalculateDirectLight(float3 hit_point, float3 normal, Material mat, float
     total_light += CalculatePointLightContribution(hit_point, normal, mat, view_dir, POINT_LIGHT);
     total_light += CalculateAreaLightContribution(hit_point, normal, mat, view_dir, AREA_LIGHT, seed);
     return total_light;
-}
-float3 calcNormal(uint instance_id, uint primitive_index, float3 hit_point) {
-    EntityOffset offset = entity_offsets[instance_id];
-    uint index_pos = offset.index_offset + primitive_index * 3;
-    uint idx0 = LoadUintByIndex(index_buffer, index_pos + 0);
-    uint idx1 = LoadUintByIndex(index_buffer, index_pos + 1);
-    uint idx2 = LoadUintByIndex(index_buffer, index_pos + 2);
-    float3 v0 = LoadFloat3ByVertexIndex(vertex_buffer, idx0);
-    float3 v1 = LoadFloat3ByVertexIndex(vertex_buffer, idx1);
-    float3 v2 = LoadFloat3ByVertexIndex(vertex_buffer, idx2);
-    float3 edge1 = v1 - v0;
-    float3 edge2 = v2 - v0;
-    float3 normal = normalize(cross(edge1, edge2));
-    float3 view_dir = normalize(-WorldRayDirection());
-    if (dot(normal, view_dir) < 0.0) {
-        normal = -normal;
-    }
-    return normal;
 }
 [shader("raygeneration")]
 void RayGenMain() {
@@ -260,20 +250,16 @@ void ClosestHitMain(inout RayPayload payload, in BuiltInTriangleIntersectionAttr
     payload.hit_distance = RayTCurrent();
     payload.hit_point = WorldRayOrigin() + WorldRayDirection() * payload.hit_distance;
     payload.normal = calcNormal(material_idx, primitive_index, payload.hit_point);
-    
     Material mat = materials[material_idx];
     float3 view_dir = normalize(-WorldRayDirection());
     uint2 pixel_coords = DispatchRaysIndex().xy;
-    uint seed = RandomSeed(pixel_coords, payload.depth * 2 + 1, accumulated_samples[pixel_coords]);
-    
+    uint seed = RandomSeed(pixel_coords, payload.depth, accumulated_samples[pixel_coords]);
     float3 direct_light = CalculateDirectLight(payload.hit_point, payload.normal, mat, view_dir, seed);
     payload.color = direct_light * payload.throughput;
-    
     if (payload.depth < MAX_DEPTH) {
-        float reflectivity = (1.0 - mat.roughness) * (0.3 + mat.metallic * 0.8);
+        float reflectivity = min((1.0 - mat.roughness) * (0.3 + mat.metallic * 0.8), 1.0);
         if (reflectivity < 0.01) return;
         bool should_trace = RussianRoulette(payload.throughput * reflectivity, seed);
-        
         if (should_trace && reflectivity > 0.05) {
             float3 reflect_dir = reflect(-view_dir, payload.normal);
             RayDesc reflect_ray;
@@ -281,7 +267,6 @@ void ClosestHitMain(inout RayPayload payload, in BuiltInTriangleIntersectionAttr
             reflect_ray.Direction = reflect_dir;
             reflect_ray.TMin = 0.001;
             reflect_ray.TMax = 10000.0;
-            
             RayPayload reflect_payload;
             reflect_payload.color = float3(0, 0, 0);
             reflect_payload.hit = false;
@@ -291,7 +276,6 @@ void ClosestHitMain(inout RayPayload payload, in BuiltInTriangleIntersectionAttr
             reflect_payload.normal = float3(0, 0, 0);
             reflect_payload.depth = payload.depth + 1;
             reflect_payload.throughput = payload.throughput * reflectivity;
-            
             TraceRay(as, RAY_FLAG_NONE, 0xFF, 0, 1, 0, reflect_ray, reflect_payload);
             payload.color += reflect_payload.color;
         }

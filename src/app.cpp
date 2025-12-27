@@ -7,6 +7,7 @@
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
+#include "stb_image.h"
 
 #include <chrono>
 #include <iomanip>
@@ -223,43 +224,43 @@ void Application::OnInit() {
     // Add entities to the scene
     // Scene 1
 
-//	auto ground = std::make_shared<Entity>(
-//		"meshes/cube.obj",
-//		Material(glm::vec3(0.8f, 0.8f, 0.8f), 0.8f, 0.0f),
-//		glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, -1.0f, 0.0f)), 
-//		glm::vec3(10.0f, 0.1f, 10.0f))
-//	);
-//	scene_->AddEntity(ground);
-//	auto red_sphere = std::make_shared<Entity>(
-//		"meshes/octahedron.obj",
-//		Material(glm::vec3(1.0f, 0.2f, 0.2f), 0.3f, 0.0f),
-//		glm::translate(glm::mat4(1.0f), glm::vec3(-2.0f, 0.5f, 0.0f))
-//	);
-//	scene_->AddEntity(red_sphere);
-//	auto green_sphere = std::make_shared<Entity>(
-//		"meshes/octahedron.obj",
-//		Material(glm::vec3(0.2f, 1.0f, 0.2f), 0.2f, 0.9f),
-//		glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.5f, 0.0f))
-//	);
-//	scene_->AddEntity(green_sphere);
-//	auto blue_cube = std::make_shared<Entity>(
-//		"meshes/cube.obj",
-//		Material(glm::vec3(0.2f, 0.2f, 1.0f), 0.5f, 0.0f),
-//		glm::translate(glm::mat4(1.0f), glm::vec3(2.6f, 0.5f, 0.0f))
-//	);
-//	scene_->AddEntity(blue_cube);
-//	auto purple_sphere = std::make_shared<Entity>(
-//		"meshes/preview_sphere.obj",
-//		Material(glm::vec3(1.0f, 0.5f, 1.0f), 0.2f, 0.5f),
-//		glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.5f, -2.0f))
-//	);
-//	scene_->AddEntity(purple_sphere);
-//	auto pink_bunny = std::make_shared<Entity>(
-//		"meshes/bunny.obj",
-//		Material(glm::vec3(0.9f, 0.4f, 0.6f), 0.5f, 0),
-//		glm::translate(glm::mat4(1.0f), glm::vec3(3.0f, 0.5f, -2.0f))
-//	);
-//	scene_->AddEntity(pink_bunny);
+	auto ground = std::make_shared<Entity>(
+		"meshes/cube.obj",
+		Material(glm::vec3(0.8f, 0.8f, 0.8f), 0.8f, 0.0f),
+		glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, -1.0f, 0.0f)), 
+		glm::vec3(10.0f, 0.1f, 10.0f))
+	);
+	scene_->AddEntity(ground);
+	auto red_sphere = std::make_shared<Entity>(
+		"meshes/octahedron.obj",
+		Material(glm::vec3(1.0f, 0.2f, 0.2f), 0.3f, 0.0f),
+		glm::translate(glm::mat4(1.0f), glm::vec3(-2.0f, 0.5f, 0.0f))
+	);
+	scene_->AddEntity(red_sphere);
+	auto green_sphere = std::make_shared<Entity>(
+		"meshes/octahedron.obj",
+		Material(glm::vec3(0.2f, 1.0f, 0.2f), 0.2f, 0.9f),
+		glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.5f, 0.0f))
+	);
+	scene_->AddEntity(green_sphere);
+	auto blue_cube = std::make_shared<Entity>(
+		"meshes/cube.obj",
+		Material(glm::vec3(0.2f, 0.2f, 1.0f), 0.5f, 0.0f),
+		glm::translate(glm::mat4(1.0f), glm::vec3(2.6f, 0.5f, 0.0f))
+	);
+	scene_->AddEntity(blue_cube);
+	auto purple_sphere = std::make_shared<Entity>(
+		"meshes/preview_sphere.obj",
+		Material(glm::vec3(1.0f, 0.5f, 1.0f), 0.2f, 0.5f),
+		glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.5f, -2.0f))
+	);
+	scene_->AddEntity(purple_sphere);
+	auto pink_bunny = std::make_shared<Entity>(
+		"meshes/bunny.obj",
+		Material(glm::vec3(0.9f, 0.4f, 0.6f), 0.5f, 0),
+		glm::translate(glm::mat4(1.0f), glm::vec3(3.0f, 0.5f, -2.0f))
+	);
+	scene_->AddEntity(pink_bunny);
 
 
 	// Scene 2
@@ -314,20 +315,64 @@ void Application::OnInit() {
 	
 	// Scene 4
 	
-	auto ground = std::make_shared<Entity>(
-		"meshes/cube.obj",
-		Material(glm::vec3(0.8f, 0.8f, 0.8f), 0.8f, 0.0f),
-		glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, -1.0f, 0.0f)), 
-		glm::vec3(10.0f, 0.1f, 10.0f))
-	);
-	scene_->AddEntity(ground);
-	auto green_cube = std::make_shared<Entity>(
-		"meshes/cube.obj",
-		Material(glm::vec3(0, 1.0f, 0), 0.1f, 0.4f, 0, 0),
-		glm::translate(glm::mat4(1.0f), glm::vec3(-1, 0.2f, 0.5f)),
-		glm::vec3(0.2f, 0, 0)
-	);
-	scene_->AddEntity(green_cube);
+//	auto ground = std::make_shared<Entity>(
+//		"meshes/cube.obj",
+//		Material(glm::vec3(0.8f, 0.8f, 0.8f), 0.8f, 0.0f),
+//		glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, -1.0f, 0.0f)), 
+//		glm::vec3(10.0f, 0.1f, 10.0f))
+//	);
+//	scene_->AddEntity(ground);
+//	auto green_cube = std::make_shared<Entity>(
+//		"meshes/cube.obj",
+//		Material(glm::vec3(0, 1.0f, 0), 0.1f, 0.4f, 0, 0),
+//		glm::translate(glm::mat4(1.0f), glm::vec3(-1, 0.2f, 0.5f)),
+//		glm::vec3(0.2f, 0, 0)
+//	);
+//	scene_->AddEntity(green_cube);
+
+	// Load textures
+
+	std::vector<std::string> texture_paths = {
+    	"textures/texture1.png",
+    	"textures/texture2.png",
+    	"textures/texture3.png",
+    	"textures/texture4.png"
+	};
+	std::vector<float> texture_data_buffer_content;
+	for (const auto& path : texture_paths) {
+    	std::string full_path = grassland::FindAssetFile(path);
+    	grassland::LogInfo("Trying to load texture from: {}", full_path);
+    	int width, height, channels;
+    	unsigned char* data = stbi_load(full_path.c_str(), &width, &height, &channels, 4);
+    	if (data) {
+        	std::unique_ptr<grassland::graphics::Image> texture_image;
+        	core_->CreateImage(width, height, 
+                          grassland::graphics::IMAGE_FORMAT_R8G8B8A8_UNORM,
+                          &texture_image);
+        
+        	size_t data_size = width * height * 4;
+        	std::vector<uint8_t> pixel_data(data_size);
+        	memcpy(pixel_data.data(), data, data_size);
+        	texture_image->UploadData(pixel_data.data());
+        	texture_images_.push_back(std::move(texture_image));
+        	for (size_t i = 0; i < data_size; i += 4) {
+            	texture_data_buffer_content.push_back(data[i] / 255.0f);
+            	texture_data_buffer_content.push_back(data[i + 1] / 255.0f);
+            	texture_data_buffer_content.push_back(data[i + 2] / 255.0f);
+            	texture_data_buffer_content.push_back(data[i + 3] / 255.0f);
+        	}
+        	stbi_image_free(data);
+        	grassland::LogInfo("Successfully loaded texture from: {}", full_path);
+		}
+	}
+	
+	if (!texture_data_buffer_content.empty()) {
+    	size_t buffer_size = texture_data_buffer_content.size() * sizeof(float);
+    	core_->CreateBuffer(buffer_size, 
+                       grassland::graphics::BUFFER_TYPE_DYNAMIC,
+                       &texture_data_buffer_);
+    	texture_data_buffer_->UploadData(texture_data_buffer_content.data(), buffer_size);
+	}
 
     // Build acceleration structures
     scene_->BuildAccelerationStructures();
@@ -396,6 +441,7 @@ void Application::OnInit() {
     program_->AddResourceBinding(grassland::graphics::RESOURCE_TYPE_STORAGE_BUFFER, 1);
     program_->AddResourceBinding(grassland::graphics::RESOURCE_TYPE_STORAGE_BUFFER, 1);
     program_->AddResourceBinding(grassland::graphics::RESOURCE_TYPE_STORAGE_BUFFER, 1);
+    program_->AddResourceBinding(grassland::graphics::RESOURCE_TYPE_STORAGE_BUFFER, 1);  // space11 - texture data
 	program_->Finalize();
 }
 
@@ -872,6 +918,9 @@ void Application::OnRender() {
     command_context->CmdBindResources(8, { scene_->GetVertexDataBuffer() }, grassland::graphics::BIND_POINT_RAYTRACING);
     command_context->CmdBindResources(9, { scene_->GetIndexDataBuffer() }, grassland::graphics::BIND_POINT_RAYTRACING);
     command_context->CmdBindResources(10, { scene_->GetEntityOffsetBuffer() }, grassland::graphics::BIND_POINT_RAYTRACING);
+    if (texture_data_buffer_) {
+    	command_context->CmdBindResources(11, { texture_data_buffer_.get() }, grassland::graphics::BIND_POINT_RAYTRACING);
+	}
 	command_context->CmdDispatchRays(window_->GetWidth(), window_->GetHeight(), 1);
     
     // When camera is disabled, increment sample count and use accumulated image

@@ -54,6 +54,10 @@ private:
     std::unique_ptr<grassland::graphics::Shader> raygen_shader_;
     std::unique_ptr<grassland::graphics::Shader> miss_shader_;
     std::unique_ptr<grassland::graphics::Shader> closest_hit_shader_;
+    
+    // Textures
+    std::vector<std::unique_ptr<grassland::graphics::Image>> texture_images_;
+    std::unique_ptr<grassland::graphics::Buffer> texture_data_buffer_;
 
     // Rendering
     std::unique_ptr<grassland::graphics::Image> color_image_;

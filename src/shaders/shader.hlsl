@@ -43,6 +43,40 @@ RWTexture2D<int> accumulated_samples : register(u0, space7);
 ByteAddressBuffer vertex_buffer : register(t0, space8);
 ByteAddressBuffer index_buffer : register(t0, space9);
 StructuredBuffer<EntityOffset> entity_offsets : register(t0, space10);
+ByteAddressBuffer texture_data_buffer : register(t0, space11);
+float3 GetTextureColor(uint texture_index, float2 uv) {
+    uint width, height, offset;
+    
+    if (texture_index == 0 || texture_index == 1 || texture_index == 3) {
+        width = 1024;
+        height = 1024;
+    } else {
+        width = 1520;
+        height = 760;
+    }
+    
+    if (texture_index == 0) {
+        offset = 0;
+    } else if (texture_index == 1) {
+        offset = 1024 * 1024;
+    } else if (texture_index == 2) {
+        offset = 1024 * 1024 * 2;
+    } else {
+        offset = 1024 * 1024 * 2 + 1520 * 760;
+    }
+    
+    uint x = uint(uv.x * width) % width;
+    uint y = uint(uv.y * height) % height;
+    uint pixel_index = offset + y * width + x;
+    
+    uint byte_offset = pixel_index * 4 * 4;
+    
+    float r = asfloat(texture_data_buffer.Load(byte_offset));
+    float g = asfloat(texture_data_buffer.Load(byte_offset + 4));
+    float b = asfloat(texture_data_buffer.Load(byte_offset + 8));
+    
+    return float3(r, g, b);
+}
 struct RayPayload {
     float3 color;
     bool hit;
@@ -62,13 +96,13 @@ static const PointLight POINT_LIGHT = {
     0
 };
 static const AreaLight AREA_LIGHT = {
-    float3(2, 2.5, 0),
+    float3(2, 4, 0),
     normalize(float3(0, -1, 0)),
     normalize(float3(0, 0, 1)),
-    2.0,
-    1.0,
-    float3(1.0, 0.9, 0.8),
-    8.0
+    5.0,
+    5.0,
+    float3(1.0, 0.99, 0.98),
+    25.0
 };
 static const float3 AMBIENT_COLOR = float3(1.0, 1.0, 1.0);
 static const float AMBIENT_INTENSITY = 0.2;
@@ -110,6 +144,16 @@ uint LoadUintByIndex(ByteAddressBuffer buffer, uint index_position) {
     return buffer.Load(byte_offset);
 }
 float3 calcNormal(uint instance_id, uint primitive_index, float3 hit_point) {
+    // normal map
+    if (instance_id == 0) {
+        float ux = (hit_point.x + 10.0) / 20.0;
+        float uy = (hit_point.z + 10.0) / 20.0;
+        float3 normal = GetTextureColor(0, float2(ux, uy)) - float3(0.5, 0.5, 0.5);
+        normal = normalize(normal);
+        float3 view_dir = normalize(-WorldRayDirection());
+        if (dot(normal, view_dir) < 0.0) normal = -normal;
+        return normal;
+    }
     EntityOffset offset = entity_offsets[instance_id];
     uint index_pos = offset.index_offset + primitive_index * 3;
     uint idx0 = LoadUintByIndex(index_buffer, index_pos + 0);
@@ -246,9 +290,22 @@ void RayGenMain() {
 }
 [shader("miss")]
 void MissMain(inout RayPayload payload) {
-    float t = 0.5 * (normalize(WorldRayDirection()).y + 1.0);
-    payload.color = lerp(float3(1, 1, 1), float3(0.5, 0.7, 1.0), t) * payload.throughput;
-    payload.hit = false; payload.hit_distance = 10000.0; payload.instance_id = 0xFFFFFFFF;
+    if (payload.depth == 100) {
+        payload.color = float3(0, 0, 0);
+        payload.hit = false;
+        payload.hit_distance = 10000.0;
+        payload.instance_id = 0xFFFFFFFF;
+        return;
+    }
+    float3 ray_dir = normalize(WorldRayDirection());
+    float u = 0.5 + atan2(ray_dir.z, ray_dir.x) / (2.0 * PI);
+    float v = 0.5 - asin(ray_dir.y) / PI;
+    float2 uv = float2(u, v);
+    float3 sky_color = GetTextureColor(2, uv);
+    payload.color = sky_color * payload.throughput;
+    payload.hit = false;
+    payload.hit_distance = 10000.0;
+    payload.instance_id = 0xFFFFFFFF;
 }
 [shader("closesthit")]
 void ClosestHitMain(inout RayPayload payload, in BuiltInTriangleIntersectionAttributes attr) {
@@ -263,6 +320,20 @@ void ClosestHitMain(inout RayPayload payload, in BuiltInTriangleIntersectionAttr
     float3 view_dir = normalize(-WorldRayDirection());
     uint2 pixel_coords = DispatchRaysIndex().xy;
     uint seed = RandomSeed(pixel_coords, payload.depth, accumulated_samples[pixel_coords]);
+    // color texture for the ground
+    if (material_idx == 100) {
+        float ux = (hit_point.x + 10.0) / 20.0;
+        float uy = (hit_point.z + 10.0) / 20.0;
+        mat.base_color = GetTextureColor(0, float2(ux, uy));
+    }
+    // height map for the ground
+    if (material_idx == 100) {
+        float ux = (hit_point.x + 10.0) / 20.0;
+        float uy = (hit_point.z + 10.0) / 20.0;
+        float3 height_col = GetTextureColor(3, float2(ux, uy));
+        float height = (height_col.x + height_col.y + height_col.z) / 3.0;
+        hit_point = hit_point + 15 * (1 - height) * norm;
+    }
     float3 direct_light = CalculateDirectLight(hit_point, norm, mat, view_dir, seed);
     payload.color = direct_light * payload.throughput;
     if (payload.depth < MAX_DEPTH) {

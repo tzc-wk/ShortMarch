@@ -7,7 +7,8 @@ class Entity {
 public:
     Entity(const std::string& obj_file_path, 
            const Material& material = Material(),
-           const glm::mat4& transform = glm::mat4(1.0f));
+           const glm::mat4& transform = glm::mat4(1.0f),
+		   const glm::vec3& velocity = glm::vec3(0.0f));
 
     ~Entity();
 
@@ -18,6 +19,7 @@ public:
     grassland::graphics::Buffer* GetVertexBuffer() const { return vertex_buffer_.get(); }
     grassland::graphics::Buffer* GetIndexBuffer() const { return index_buffer_.get(); }
     const Material& GetMaterial() const { return material_; }
+    const glm::vec3& GetVelocity() const { return velocity_; }
     const glm::mat4& GetTransform() const { return transform_; }
     grassland::graphics::AccelerationStructure* GetBLAS() const { return blas_.get(); }
     
@@ -42,6 +44,9 @@ public:
     // Setters
     void SetMaterial(const Material& material) { material_ = material; }
     void SetTransform(const glm::mat4& transform) { transform_ = transform; }
+    void SetVelocity(const glm::vec3& velocity) { velocity_ = velocity; }
+    
+    void UpdateAnimation();
 
     // Create BLAS for this entity's mesh
     void BuildBLAS(grassland::graphics::Core* core);
@@ -53,6 +58,7 @@ private:
     grassland::Mesh<float> mesh_;
     Material material_;
     glm::mat4 transform_;
+    glm::vec3 velocity_;
 
     std::unique_ptr<grassland::graphics::Buffer> vertex_buffer_;
     std::unique_ptr<grassland::graphics::Buffer> index_buffer_;

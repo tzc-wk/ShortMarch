@@ -1,10 +1,13 @@
 #include "Entity.h"
+#include "glm/gtc/matrix_transform.hpp"
 
 Entity::Entity(const std::string& obj_file_path, 
                const Material& material,
-               const glm::mat4& transform)
+               const glm::mat4& transform,
+			   const glm::vec3& velocity)
     : material_(material)
     , transform_(transform)
+    , velocity_(velocity)
     , mesh_loaded_(false) {
     
     LoadMesh(obj_file_path);
@@ -63,3 +66,10 @@ void Entity::BuildBLAS(grassland::graphics::Core* core) {
     grassland::LogInfo("Built BLAS for entity");
 }
 
+void Entity::UpdateAnimation() {
+    if (glm::length(velocity_) > 0.0f) {
+        float move_per_frame = 0.01f;
+        glm::vec3 displacement = velocity_ * move_per_frame;
+        transform_ = glm::translate(transform_, displacement);
+    }
+}

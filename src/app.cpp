@@ -292,6 +292,28 @@ void Application::OnInit() {
 
 	// Scene 3
 	
+//	auto ground = std::make_shared<Entity>(
+//		"meshes/cube.obj",
+//		Material(glm::vec3(0.8f, 0.8f, 0.8f), 0.8f, 0.0f),
+//		glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, -1.0f, 0.0f)), 
+//		glm::vec3(10.0f, 0.1f, 10.0f))
+//	);
+//	scene_->AddEntity(ground);
+//	auto glass_cube = std::make_shared<Entity>(
+//		"meshes/cube.obj",
+//		Material(glm::vec3(1.0f, 1.0f, 1.0f), 0.1f, 0, 0.9f, 1.5f),
+//		glm::translate(glm::mat4(1.0f), glm::vec3(0, 0.2f, 0.5f))
+//	);
+//	scene_->AddEntity(glass_cube);
+//	auto purple_sphere = std::make_shared<Entity>(
+//		"meshes/preview_sphere.obj",
+//		Material(glm::vec3(1.0f, 0.5f, 1.0f), 0.2f, 0.5f),
+//		glm::translate(glm::mat4(1.0f), glm::vec3(0, 0.5f, -2.0f))
+//	);
+//	scene_->AddEntity(purple_sphere);
+	
+	// Scene 4
+	
 	auto ground = std::make_shared<Entity>(
 		"meshes/cube.obj",
 		Material(glm::vec3(0.8f, 0.8f, 0.8f), 0.8f, 0.0f),
@@ -299,19 +321,13 @@ void Application::OnInit() {
 		glm::vec3(10.0f, 0.1f, 10.0f))
 	);
 	scene_->AddEntity(ground);
-	auto glass_cube = std::make_shared<Entity>(
+	auto green_cube = std::make_shared<Entity>(
 		"meshes/cube.obj",
-		Material(glm::vec3(1.0f, 1.0f, 1.0f), 0.1f, 0, 0.9f, 1.5f),
-		glm::translate(glm::mat4(1.0f), glm::vec3(0, 0.2f, 0.5f))
+		Material(glm::vec3(0, 1.0f, 0), 0.1f, 0.4f, 0, 0),
+		glm::translate(glm::mat4(1.0f), glm::vec3(-1, 0.2f, 0.5f)),
+		glm::vec3(0.2f, 0, 0)
 	);
-	scene_->AddEntity(glass_cube);
-	auto purple_sphere = std::make_shared<Entity>(
-		"meshes/preview_sphere.obj",
-		Material(glm::vec3(1.0f, 0.5f, 1.0f), 0.2f, 0.5f),
-		glm::translate(glm::mat4(1.0f), glm::vec3(0, 0.5f, -2.0f))
-	);
-	scene_->AddEntity(purple_sphere);
-	
+	scene_->AddEntity(green_cube);
 
     // Build acceleration structures
     scene_->BuildAccelerationStructures();
@@ -331,7 +347,7 @@ void Application::OnInit() {
     // Initialize camera state member variables
     camera_pos_ = glm::vec3{ 0.0f, 1.0f, 5.0f };
     camera_up_ = glm::vec3{ 0.0f, 1.0f, 0.0f }; // World up
-    camera_speed_ = 0.01f;
+    camera_speed_ = 0.07f;
 
     // Initialize new mouse/view variables
     yaw_ = -90.0f; // Point down -Z
@@ -832,6 +848,10 @@ void Application::OnRender() {
     if (!alive_) {
         return;
     }
+    for (auto& entity : scene_->GetEntities()) {
+        entity->UpdateAnimation();
+    }
+    scene_->UpdateInstances();
 
     std::unique_ptr<grassland::graphics::CommandContext> command_context;
     core_->CreateCommandContext(&command_context);

@@ -436,7 +436,7 @@ void Application::OnInit() {
 	auto brown_chair = std::make_shared<Entity>(
 		"meshes/chair.obj",
 		Material(glm::vec3(0.4f, 0.3f, 0.2f), 0.7f, 0),
-		glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 1.6f, -1.0f)), glm::vec3(0.3f, 0.3f, 0.3f))
+		glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 1.6f, -1.5f)), glm::vec3(0.3f, 0.3f, 0.3f))
 	);
 	scene_->AddEntity(brown_chair);
 

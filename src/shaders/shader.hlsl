@@ -211,13 +211,13 @@ static const PointLight POINT_LIGHT = {
     0
 };
 static const AreaLight AREA_LIGHT = {
-    float3(0, 6.0, 0),
+    float3(0, 6.0, -2.2),
     normalize(float3(0, -1, 0)),
     normalize(float3(0, 0, 1)),
     2.0,
     2.0,
     float3(1.0, 0.99, 0.98),
-    40.0
+    70.0
 };
 static const float3 AMBIENT_COLOR = float3(1.0, 1.0, 1.0);
 static const float AMBIENT_INTENSITY = 0.2;

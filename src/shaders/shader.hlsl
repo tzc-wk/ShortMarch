@@ -331,6 +331,23 @@ void ClosestHitMain(inout RayPayload payload, in BuiltInTriangleIntersectionAttr
         float uy = (hit_point.z + 10.0) / 20.0;
         mat.base_color = GetTextureColor(0, float2(ux, uy));
     }
+    if (material_idx == 100) {
+        float3 local_pos = hit_point - float3(0.0f, 0.5f, 0.0f);
+        float3 abs_local = abs(local_pos);
+        float2 uv;
+        if (abs_local.x > abs_local.y && abs_local.x > abs_local.z) {
+            uv = float2(local_pos.z, local_pos.y) / 2.0 + 0.5;
+            if (local_pos.x < 0) uv.x = 1.0 - uv.x;
+        } else if (abs_local.y > abs_local.z) {
+            uv = float2(local_pos.x, local_pos.z) / 2.0 + 0.5;
+            if (local_pos.y < 0) uv.y = 1.0 - uv.y;
+        } else {
+            uv = float2(local_pos.x, local_pos.y) / 2.0 + 0.5;
+            if (local_pos.z < 0) uv.x = 1.0 - uv.x;
+        }
+        float3 tex_color = GetTextureColor(0, uv);
+        mat.base_color = tex_color;
+    }
     // height map for the ground
     if (material_idx == 100) {
         float ux = (hit_point.x + 10.0) / 20.0;

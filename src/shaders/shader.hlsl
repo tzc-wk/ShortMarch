@@ -136,7 +136,10 @@ uint LoadUintByIndex(ByteAddressBuffer buffer, uint index_position) {
     return buffer.Load(byte_offset);
 }
 float3 calcNormal(uint instance_id, uint primitive_index, float3 hit_point) {
-    // normal map
+    // =====================================================================================================================================
+    // =================================================== normal map for the ground  ======================================================
+    // =====================================================================================================================================
+
     if (instance_id == 100) {
         float ux = (hit_point.x + 10.0) / 20.0;
         float uy = (hit_point.z + 10.0) / 20.0;
@@ -146,6 +149,7 @@ float3 calcNormal(uint instance_id, uint primitive_index, float3 hit_point) {
         if (dot(normal, view_dir) < 0.0) normal = -normal;
         return normal;
     }
+
     EntityOffset offset = entity_offsets[instance_id];
     uint index_pos = offset.index_offset + primitive_index * 3;
     uint idx0 = LoadUintByIndex(index_buffer, index_pos + 0);
@@ -384,7 +388,11 @@ void ClosestHitMain(inout RayPayload payload, in BuiltInTriangleIntersectionAttr
     float3 view_dir = normalize(-WorldRayDirection());
     uint2 pixel_coords = DispatchRaysIndex().xy;
     uint seed = RandomSeed(pixel_coords, payload.depth, accumulated_samples[pixel_coords]);
-    // color texture for the ground
+    
+    // =====================================================================================================================================
+    // ======================================== color texture for the ground (using adaptive mipmap) =======================================
+    // =====================================================================================================================================
+
     if (material_idx == 0) {
         float3 camera_pos = WorldRayOrigin();
         float3 view_dir = normalize(-WorldRayDirection());
@@ -393,6 +401,11 @@ void ClosestHitMain(inout RayPayload payload, in BuiltInTriangleIntersectionAttr
         float uy = (hit_point.z + 10.0) / 20.0;
         mat.base_color = GetTextureColor(0, float2(ux, uy), mip_lev);
     }
+
+    // =====================================================================================================================================
+    // =================================================== color texture for the cube  =====================================================
+    // =====================================================================================================================================
+
     if (material_idx == 100) {
         float3 local_pos = hit_point - float3(0.0f, 0.5f, 0.0f);
         float3 abs_local = abs(local_pos);
@@ -410,7 +423,11 @@ void ClosestHitMain(inout RayPayload payload, in BuiltInTriangleIntersectionAttr
         float3 tex_color = GetTextureColor(0, uv);
         mat.base_color = tex_color;
     }
-    // height map for the ground
+    
+    // =====================================================================================================================================
+    // =================================================== height map for the ground  ======================================================
+    // =====================================================================================================================================
+
     if (material_idx == 100) {
         float ux = (hit_point.x + 10.0) / 20.0;
         float uy = (hit_point.z + 10.0) / 20.0;
@@ -418,6 +435,7 @@ void ClosestHitMain(inout RayPayload payload, in BuiltInTriangleIntersectionAttr
         float height = (height_col.x + height_col.y + height_col.z) / 3.0;
         hit_point = hit_point + 15 * (1 - height) * norm;
     }
+
     float3 direct_light = CalculateDirectLight(hit_point, norm, mat, view_dir, seed);
     payload.color = direct_light * payload.throughput;
     if (payload.depth < MAX_DEPTH) {

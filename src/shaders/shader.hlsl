@@ -12,26 +12,7 @@ struct Material {
 struct HoverInfo {
     int hovered_entity_id;
 };
-struct EntityOffset {
-    uint vertex_offset;
-    uint index_offset;
-    uint vertex_count;
-    uint index_count;
-};
-struct PointLight {
-    float3 position;
-    float3 color;
-    float intensity;
-};
-struct AreaLight {
-    float3 center;
-    float3 normal;
-    float3 left;
-    float width;
-    float height;
-    float3 color;
-    float intensity;
-};
+
 RaytracingAccelerationStructure as : register(t0, space0);
 RWTexture2D<float4> output : register(u0, space1);
 ConstantBuffer<CameraInfo> camera_info : register(b0, space2);
@@ -40,98 +21,43 @@ ConstantBuffer<HoverInfo> hover_info : register(b0, space4);
 RWTexture2D<int> entity_id_output : register(u0, space5);
 RWTexture2D<float4> accumulated_color : register(u0, space6);
 RWTexture2D<int> accumulated_samples : register(u0, space7);
-ByteAddressBuffer vertex_buffer : register(t0, space8);
-ByteAddressBuffer index_buffer : register(t0, space9);
-StructuredBuffer<EntityOffset> entity_offsets : register(t0, space10);
+
+// =====================================================================================================================================
+// ================================================== texture related ==================================================================
+// =====================================================================================================================================
+
 ByteAddressBuffer texture_data_buffer : register(t0, space11);
 float3 GetTextureColor(uint texture_index, float2 uv) {
     uint width, height, offset;
-    
-    if (texture_index == 0 || texture_index == 1 || texture_index == 3) {
-        width = 1024;
-        height = 1024;
-    } else {
-        width = 1520;
-        height = 760;
-    }
-    
-    if (texture_index == 0) {
-        offset = 0;
-    } else if (texture_index == 1) {
-        offset = 1024 * 1024;
-    } else if (texture_index == 2) {
-        offset = 1024 * 1024 * 2;
-    } else {
-        offset = 1024 * 1024 * 2 + 1520 * 760;
-    }
-    
+    if (texture_index == 0 || texture_index == 1 || texture_index == 3) {width = 1024; height = 1024;}
+    else {width = 1520; height = 760;}
+    if (texture_index == 0) offset = 0;
+    else if (texture_index == 1) offset = 1024 * 1024;
+    else if (texture_index == 2) offset = 1024 * 1024 * 2;
+    else offset = 1024 * 1024 * 2 + 1520 * 760;
     uint x = uint(uv.x * width) % width;
     uint y = uint(uv.y * height) % height;
     uint pixel_index = offset + y * width + x;
-    
     uint byte_offset = pixel_index * 4 * 4;
-    
     float r = asfloat(texture_data_buffer.Load(byte_offset));
     float g = asfloat(texture_data_buffer.Load(byte_offset + 4));
     float b = asfloat(texture_data_buffer.Load(byte_offset + 8));
-    
     return float3(r, g, b);
 }
-struct RayPayload {
-    float3 color;
-    bool hit;
-    uint instance_id;
-    float hit_distance;
-    uint depth;
-    float throughput;
-    bool inside_material;
-};
-#define MAX_DEPTH 3
-#define PI 3.14159265358979323846
-#define AREA_LIGHT_SAMPLES 1
 
-static const PointLight POINT_LIGHT = {
-    float3(0, 3, 0),
-    float3(1.0, 0.95, 0.9),
-    0
-};
-static const AreaLight AREA_LIGHT = {
-    float3(2, 4, 0),
-    normalize(float3(0, -1, 0)),
-    normalize(float3(0, 0, 1)),
-    5.0,
-    5.0,
-    float3(1.0, 0.99, 0.98),
-    25.0
-};
-static const float3 AMBIENT_COLOR = float3(1.0, 1.0, 1.0);
-static const float AMBIENT_INTENSITY = 0.2;
+// =====================================================================================================================================
+// ================================================== geometry related =================================================================
+// =====================================================================================================================================
 
-uint RandomSeed(uint2 pixel, uint depth, uint frame) {return (pixel.x * 73856093u) ^ (pixel.y * 19349663u) ^ (depth * 83492789u) ^ (frame * 735682483u);}
-float Random(inout uint seed) {
-    seed = seed * 747796405u + 2891336453u;
-    uint result = ((seed >> ((seed >> 28u) + 4u)) ^ seed) * 277803737u;
-    result = (result >> 22u) ^ result;
-    return float(result) / 4294967295.0;
-}
-bool RussianRoulette(float throughput, inout uint seed) {
-    if (throughput < 0.05) {
-        float r = Random(seed);
-        float continue_prob = 1.0 - exp(-throughput * 15.0);
-        continue_prob = clamp(continue_prob, 0.2, 0.95);
-        if (r > continue_prob) return false;
-    }
-    return true;
-}
-float3 reflect(float3 I, float3 N) {return I - 2.0 * dot(I, N) * N;}
-float3 refract(float3 I, float3 N, float eta) {
-    float NdotI = dot(N, I);
-    float k = 1.0 - eta * eta * (1.0 - NdotI * NdotI);
-    if (k < 0.0) {
-        return reflect(-I, N);
-    }
-    return eta * I - (eta * NdotI + sqrt(k)) * N;
-}
+struct EntityOffset {
+    uint vertex_offset;
+    uint index_offset;
+    uint vertex_count;
+    uint index_count;
+};
+ByteAddressBuffer vertex_buffer : register(t0, space8);
+ByteAddressBuffer index_buffer : register(t0, space9);
+StructuredBuffer<EntityOffset> entity_offsets : register(t0, space10);
 float3 LoadFloat3ByVertexIndex(ByteAddressBuffer buffer, uint vertex_index) {
     uint byte_offset = vertex_index * 12;
     float x = asfloat(buffer.Load(byte_offset));
@@ -169,6 +95,78 @@ float3 calcNormal(uint instance_id, uint primitive_index, float3 hit_point) {
     if (dot(normal, view_dir) < 0.0) normal = -normal;
     return normal;
 }
+float3 reflect(float3 I, float3 N) {return I - 2.0 * dot(I, N) * N;}
+float3 refract(float3 I, float3 N, float eta) {
+    float NdotI = dot(N, I);
+    float k = 1.0 - eta * eta * (1.0 - NdotI * NdotI);
+    if (k < 0.0) {
+        return reflect(-I, N);
+    }
+    return eta * I - (eta * NdotI + sqrt(k)) * N;
+}
+
+// =====================================================================================================================================
+// ================================================== lighting related =================================================================
+// =====================================================================================================================================
+
+struct RayPayload {
+    float3 color;
+    bool hit;
+    uint instance_id;
+    float hit_distance;
+    uint depth;
+    float throughput;
+    bool inside_material;
+};
+struct PointLight {
+    float3 position;
+    float3 color;
+    float intensity;
+};
+struct AreaLight {
+    float3 center;
+    float3 normal;
+    float3 left;
+    float width;
+    float height;
+    float3 color;
+    float intensity;
+};
+static const PointLight POINT_LIGHT = {
+    float3(0, 3, 0),
+    float3(1.0, 0.95, 0.9),
+    0
+};
+static const AreaLight AREA_LIGHT = {
+    float3(0, 4, 0),
+    normalize(float3(0, -1, 0)),
+    normalize(float3(0, 0, 1)),
+    5.0,
+    5.0,
+    float3(1.0, 0.99, 0.98),
+    25.0
+};
+static const float3 AMBIENT_COLOR = float3(1.0, 1.0, 1.0);
+static const float AMBIENT_INTENSITY = 0.2;
+static const int AREA_LIGHT_SAMPLES = 1;
+
+uint RandomSeed(uint2 pixel, uint depth, uint frame) {return (pixel.x * 73856093u) ^ (pixel.y * 19349663u) ^ (depth * 83492789u) ^ (frame * 735682483u);}
+float Random(inout uint seed) {
+    seed = seed * 747796405u + 2891336453u;
+    uint result = ((seed >> ((seed >> 28u) + 4u)) ^ seed) * 277803737u;
+    result = (result >> 22u) ^ result;
+    return float(result) / 4294967295.0;
+}
+bool RussianRoulette(float throughput, inout uint seed) {
+    if (throughput < 0.05) {
+        float r = Random(seed);
+        float continue_prob = 1.0 - exp(-throughput * 15.0);
+        continue_prob = clamp(continue_prob, 0.2, 0.95);
+        if (r > continue_prob) return false;
+    }
+    return true;
+}
+
 float TestShadow(float3 hit_point, float3 light_pos) {
     float3 light_to_point = hit_point - light_pos;
     float total_distance = length(light_to_point);
@@ -254,6 +252,13 @@ float3 CalculateDirectLight(float3 hit_point, float3 normal, Material mat, float
     total_light += CalculateAreaLightContribution(hit_point, normal, mat, view_dir, AREA_LIGHT, seed);
     return total_light;
 }
+
+// =====================================================================================================================================
+// ================================================== raytracing related ===============================================================
+// =====================================================================================================================================
+
+#define MAX_DEPTH 3
+#define PI 3.14159265358979323846
 [shader("raygeneration")]
 void RayGenMain() {
     uint2 pixel_coords = DispatchRaysIndex().xy;

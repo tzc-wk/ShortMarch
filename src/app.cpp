@@ -224,43 +224,43 @@ void Application::OnInit() {
     // Add entities to the scene
     // Scene 1
 
-	auto ground = std::make_shared<Entity>(
-		"meshes/cube.obj",
-		Material(glm::vec3(0.8f, 0.8f, 0.8f), 0.8f, 0.0f),
-		glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, -1.0f, 0.0f)), 
-		glm::vec3(10.0f, 0.1f, 10.0f))
-	);
-	scene_->AddEntity(ground);
-	auto red_sphere = std::make_shared<Entity>(
-		"meshes/octahedron.obj",
-		Material(glm::vec3(1.0f, 0.2f, 0.2f), 0.3f, 0.0f),
-		glm::translate(glm::mat4(1.0f), glm::vec3(-2.0f, 0.5f, 0.0f))
-	);
-	scene_->AddEntity(red_sphere);
-	auto green_sphere = std::make_shared<Entity>(
-		"meshes/octahedron.obj",
-		Material(glm::vec3(0.2f, 1.0f, 0.2f), 0.2f, 0.9f),
-		glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.5f, 0.0f))
-	);
-	scene_->AddEntity(green_sphere);
-	auto blue_cube = std::make_shared<Entity>(
-		"meshes/cube.obj",
-		Material(glm::vec3(0.2f, 0.2f, 1.0f), 0.5f, 0.0f),
-		glm::translate(glm::mat4(1.0f), glm::vec3(2.6f, 0.5f, 0.0f))
-	);
-	scene_->AddEntity(blue_cube);
-	auto purple_sphere = std::make_shared<Entity>(
-		"meshes/preview_sphere.obj",
-		Material(glm::vec3(1.0f, 0.5f, 1.0f), 0.2f, 0.5f),
-		glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.5f, -2.0f))
-	);
-	scene_->AddEntity(purple_sphere);
-	auto pink_bunny = std::make_shared<Entity>(
-		"meshes/bunny.obj",
-		Material(glm::vec3(0.9f, 0.4f, 0.6f), 0.5f, 0),
-		glm::translate(glm::mat4(1.0f), glm::vec3(3.0f, 0.5f, -2.0f))
-	);
-	scene_->AddEntity(pink_bunny);
+//	auto ground = std::make_shared<Entity>(
+//		"meshes/cube.obj",
+//		Material(glm::vec3(0.8f, 0.8f, 0.8f), 0.8f, 0.0f),
+//		glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, -1.0f, 0.0f)), 
+//		glm::vec3(10.0f, 0.1f, 10.0f))
+//	);
+//	scene_->AddEntity(ground);
+//	auto red_sphere = std::make_shared<Entity>(
+//		"meshes/octahedron.obj",
+//		Material(glm::vec3(1.0f, 0.2f, 0.2f), 0.3f, 0.0f),
+//		glm::translate(glm::mat4(1.0f), glm::vec3(-2.0f, 0.5f, 0.0f))
+//	);
+//	scene_->AddEntity(red_sphere);
+//	auto green_sphere = std::make_shared<Entity>(
+//		"meshes/octahedron.obj",
+//		Material(glm::vec3(0.2f, 1.0f, 0.2f), 0.2f, 0.9f),
+//		glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.5f, 0.0f))
+//	);
+//	scene_->AddEntity(green_sphere);
+//	auto blue_cube = std::make_shared<Entity>(
+//		"meshes/cube.obj",
+//		Material(glm::vec3(0.2f, 0.2f, 1.0f), 0.5f, 0.0f),
+//		glm::translate(glm::mat4(1.0f), glm::vec3(2.6f, 0.5f, 0.0f))
+//	);
+//	scene_->AddEntity(blue_cube);
+//	auto purple_sphere = std::make_shared<Entity>(
+//		"meshes/preview_sphere.obj",
+//		Material(glm::vec3(1.0f, 0.5f, 1.0f), 0.2f, 0.5f),
+//		glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.5f, -2.0f))
+//	);
+//	scene_->AddEntity(purple_sphere);
+//	auto pink_bunny = std::make_shared<Entity>(
+//		"meshes/bunny.obj",
+//		Material(glm::vec3(0.9f, 0.4f, 0.6f), 0.5f, 0),
+//		glm::translate(glm::mat4(1.0f), glm::vec3(3.0f, 0.5f, -2.0f))
+//	);
+//	scene_->AddEntity(pink_bunny);
 
 
 	// Scene 2
@@ -329,6 +329,22 @@ void Application::OnInit() {
 //		glm::vec3(0.2f, 0, 0)
 //	);
 //	scene_->AddEntity(green_cube);
+
+	// Scene 5
+	
+	auto ground = std::make_shared<Entity>(
+		"meshes/cube.obj",
+		Material(glm::vec3(0.8f, 0.8f, 0.8f), 0.8f, 0.0f),
+		glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, -1.0f, 0.0f)), 
+		glm::vec3(10.0f, 0.1f, 10.0f))
+	);
+	scene_->AddEntity(ground);
+	auto red_cube = std::make_shared<Entity>(
+		"meshes/cube.obj",
+		Material(glm::vec3(1.0f, 0.2f, 0.2f), 0.5f, 0.0f),
+		glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.5f, 0.0f))
+	);
+	scene_->AddEntity(red_cube);
 
 	// Load textures
 

@@ -86,7 +86,10 @@ float3 GetTextureColor(uint texture_index, float2 uv, float lev = 0) {
     uint width, height, offset;
     if (texture_index == 1) {width = 1024; height = 1024; offset = 1398101;}
     else if (texture_index == 2) {width = 1024; height = 1024; offset = 2446677;}
-    else {width = 1520; height = 760; offset = 3495253;}
+    else if (texture_index == 3) {width = 1520; height = 760; offset = 3495253;}
+    else if (texture_index == 4) {width = 1000; height = 1000; offset = 4650453;}
+    else if (texture_index == 5) {width = 1500; height = 1500; offset = 5650453;}
+    else if (texture_index == 6) {width = 1080; height = 1080; offset = 7900453;}
     uint x = uint(uv.x * width) % width;
     uint y = uint(uv.y * height) % height;
     uint pixel_index = offset + y * width + x;
@@ -140,7 +143,7 @@ float3 calcNormal(uint instance_id, uint primitive_index, float3 hit_point) {
     // =================================================== normal map for the ground  ======================================================
     // =====================================================================================================================================
 
-    if (instance_id == 100) {
+    if (instance_id == 0) {
         float ux = (hit_point.x + 10.0) / 20.0;
         float uy = (hit_point.z + 10.0) / 20.0;
         float3 normal = GetTextureColor(0, float2(ux, uy)) - float3(0.5, 0.5, 0.5);
@@ -208,13 +211,13 @@ static const PointLight POINT_LIGHT = {
     0
 };
 static const AreaLight AREA_LIGHT = {
-    float3(0, 4, 0),
+    float3(0, 6.0, 0),
     normalize(float3(0, -1, 0)),
     normalize(float3(0, 0, 1)),
-    5.0,
-    5.0,
+    2.0,
+    2.0,
     float3(1.0, 0.99, 0.98),
-    50.0
+    40.0
 };
 static const float3 AMBIENT_COLOR = float3(1.0, 1.0, 1.0);
 static const float AMBIENT_INTENSITY = 0.2;
@@ -393,7 +396,7 @@ void ClosestHitMain(inout RayPayload payload, in BuiltInTriangleIntersectionAttr
     // ======================================== color texture for the ground (using adaptive mipmap) =======================================
     // =====================================================================================================================================
 
-    if (material_idx == 0) {
+    if (material_idx == 100) {
         float3 camera_pos = WorldRayOrigin();
         float3 view_dir = normalize(-WorldRayDirection());
         float mip_lev = CalculateGroundMipLevel(hit_point, view_dir, camera_pos);
@@ -403,25 +406,36 @@ void ClosestHitMain(inout RayPayload payload, in BuiltInTriangleIntersectionAttr
     }
 
     // =====================================================================================================================================
-    // =================================================== color texture for the cube  =====================================================
+    // ================================================= color texture for other parts =====================================================
     // =====================================================================================================================================
 
-    if (material_idx == 100) {
-        float3 local_pos = hit_point - float3(0.0f, 0.5f, 0.0f);
-        float3 abs_local = abs(local_pos);
-        float2 uv;
-        if (abs_local.x > abs_local.y && abs_local.x > abs_local.z) {
-            uv = float2(local_pos.z, local_pos.y) / 2.0 + 0.5;
-            if (local_pos.x < 0) uv.x = 1.0 - uv.x;
-        } else if (abs_local.y > abs_local.z) {
-            uv = float2(local_pos.x, local_pos.z) / 2.0 + 0.5;
-            if (local_pos.y < 0) uv.y = 1.0 - uv.y;
-        } else {
-            uv = float2(local_pos.x, local_pos.y) / 2.0 + 0.5;
-            if (local_pos.z < 0) uv.x = 1.0 - uv.x;
-        }
-        float3 tex_color = GetTextureColor(0, uv);
-        mat.base_color = tex_color;
+    if (material_idx == 6) {
+        float3 camera_pos = WorldRayOrigin();
+        float3 view_dir = normalize(-WorldRayDirection());
+        float ux = (hit_point.x + 10.0) / 20.0;
+        float uy = (hit_point.z + 10.0) / 20.0;
+        mat.base_color = GetTextureColor(4, float2(ux, uy));
+    }
+    if (material_idx == 3 || material_idx == 4) {
+        float3 camera_pos = WorldRayOrigin();
+        float3 view_dir = normalize(-WorldRayDirection());
+        float ux = (hit_point.z + 10.0) / 7.5;
+        float uy = hit_point.y / 7.5;
+        mat.base_color = GetTextureColor(5, float2(ux, uy));
+    }
+    if (material_idx == 5 || material_idx == 7 || material_idx == 8 || material_idx == 9 || material_idx == 10 || material_idx == 11) {
+        float3 camera_pos = WorldRayOrigin();
+        float3 view_dir = normalize(-WorldRayDirection());
+        float ux = (hit_point.x + 10.0) / 7.5;
+        float uy = hit_point.y / 7.5;
+        mat.base_color = GetTextureColor(0, float2(ux, uy));
+    }
+    if (material_idx == 14) {
+        float3 camera_pos = WorldRayOrigin();
+        float3 view_dir = normalize(-WorldRayDirection());
+        float ux = (hit_point.x + 8.0) / 2.0;
+        float uy = 1.0 - (hit_point.y - 2.5) / 2.0;
+        mat.base_color = GetTextureColor(6, float2(ux, uy));
     }
     
     // =====================================================================================================================================

@@ -186,7 +186,7 @@ void Application::OnMouseButton(int button, int action, int mods, double xpos, d
 
 void Application::OnInit() {
     alive_ = true;
-    core_->CreateWindowObject(1280, 720,
+    core_->CreateWindowObject(2000, 1414,
         ((core_->API() == grassland::graphics::BACKEND_API_VULKAN) ? "[Vulkan]" : "[D3D12]") +
         std::string(" Ray Tracing Scene Demo"),
         &window_);
@@ -339,12 +339,106 @@ void Application::OnInit() {
 		glm::vec3(10.0f, 0.1f, 10.0f))
 	);
 	scene_->AddEntity(ground);
-//	auto red_cube = std::make_shared<Entity>(
-//		"meshes/cube.obj",
-//		Material(glm::vec3(1.0f, 0.2f, 0.2f), 0.5f, 0.0f),
-//		glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.5f, 0.0f))
-//	);
-//	scene_->AddEntity(red_cube);
+	auto purple_sphere = std::make_shared<Entity>(
+		"meshes/preview_sphere.obj",
+		Material(glm::vec3(1.0f, 0.5f, 1.0f), 0.2f, 0.5f),
+		glm::translate(glm::mat4(1.0f), glm::vec3(7.0f, 0.3f, -7.0f))
+	);
+	scene_->AddEntity(purple_sphere);
+	auto teapot = std::make_shared<Entity>(
+		"meshes/teapot.obj",
+		Material(glm::vec3(0.4f, 0.325f, 0.25f), 0.2f, 0.0f),
+		glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 1.45f, -4.0f)), glm::vec3(0.3f, 0.3f, 0.3f))
+	);
+	scene_->AddEntity(teapot);
+	auto left_wall = std::make_shared<Entity>(
+		"meshes/cube.obj",
+		Material(glm::vec3(0.4f, 0.325f, 0.25f), 0.8f, 0.0f),
+		glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(-10.0f, 0.0f, 0.0f)), 
+		glm::vec3(0.1f, 10.0f, 10.0f))
+	);
+	scene_->AddEntity(left_wall);
+	auto right_wall = std::make_shared<Entity>(
+		"meshes/cube.obj",
+		Material(glm::vec3(0.4f, 0.325f, 0.25f), 0.8f, 0.0f),
+		glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(10.0f, 0.0f, 0.0f)), 
+		glm::vec3(0.1f, 10.0f, 10.0f))
+	);
+	scene_->AddEntity(right_wall);
+	auto back_wall = std::make_shared<Entity>(
+		"meshes/cube.obj",
+		Material(glm::vec3(0.4f, 0.325f, 0.25f), 0.8f, 0.0f),
+		glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 10.0f)), 
+		glm::vec3(10.0f, 10.0f, 0.1f))
+	);
+	scene_->AddEntity(back_wall);
+	auto ceiling = std::make_shared<Entity>(
+		"meshes/cube.obj",
+		Material(glm::vec3(0.8f, 0.8f, 0.8f), 0.8f, 0.0f),
+		glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 7.5f, 0.0f)), 
+		glm::vec3(10.0f, 0.1f, 10.0f))
+	);
+	scene_->AddEntity(ceiling);
+	auto front_wall1 = std::make_shared<Entity>(
+		"meshes/cube.obj",
+		Material(glm::vec3(0.4f, 0.325f, 0.25f), 0.8f, 0.0f),
+		glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(10.0f, 0.0f, -10.0f)), 
+		glm::vec3(6.5f, 10.0f, 0.1f))
+	);
+	scene_->AddEntity(front_wall1);
+	auto front_wall2 = std::make_shared<Entity>(
+		"meshes/cube.obj",
+		Material(glm::vec3(0.4f, 0.325f, 0.25f), 0.8f, 0.0f),
+		glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(-10.0f, 0.0f, -10.0f)), 
+		glm::vec3(6.5f, 10.0f, 0.1f))
+	);
+	scene_->AddEntity(front_wall2);
+	auto front_wall3 = std::make_shared<Entity>(
+		"meshes/cube.obj",
+		Material(glm::vec3(0.4f, 0.325f, 0.25f), 0.8f, 0.0f),
+		glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -10.0f)), 
+		glm::vec3(10.0f, 2.2f, 0.1f))
+	);
+	scene_->AddEntity(front_wall3);
+	auto front_wall4 = std::make_shared<Entity>(
+		"meshes/cube.obj",
+		Material(glm::vec3(0.4f, 0.325f, 0.25f), 0.8f, 0.0f),
+		glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 7.5f, -10.0f)), 
+		glm::vec3(10.0f, 2.2f, 0.1f))
+	);
+	scene_->AddEntity(front_wall4);
+	auto pillar = std::make_shared<Entity>(
+		"meshes/cube.obj",
+		Material(glm::vec3(0.4f, 0.325f, 0.25f), 0.8f, 0.0f),
+		glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -10.0f)), 
+		glm::vec3(0.6f, 10.0f, 0.1f))
+	);
+	scene_->AddEntity(pillar);
+	auto pink_bunny = std::make_shared<Entity>(
+		"meshes/bunny.obj",
+		Material(glm::vec3(0.9f, 0.4f, 0.6f), 0.5f, 0),
+		glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(-7.0f, 0.3f, -7.0f)), glm::vec3(1.2f, 1.2f, 1.2f))
+	);
+	scene_->AddEntity(pink_bunny);
+	auto brown_table = std::make_shared<Entity>(
+		"meshes/table.obj",
+		Material(glm::vec3(0.4f, 0.3f, 0.2f), 0.7f, 0),
+		glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, -1.0f, -3.3f)), glm::vec3(0.007f, 0.0035f, 0.007f))
+	);
+	scene_->AddEntity(brown_table);
+	auto painting_frame = std::make_shared<Entity>(
+		"meshes/cube.obj",
+		Material(glm::vec3(0.4f, 0.325f, 0.25f), 0.8f, 0.0f),
+		glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(-7.0f, 3.5f, -9.9f)), 
+		glm::vec3(1.0f, 1.0f, 0.2f))
+	);
+	scene_->AddEntity(painting_frame);
+	auto brown_chair = std::make_shared<Entity>(
+		"meshes/chair.obj",
+		Material(glm::vec3(0.4f, 0.3f, 0.2f), 0.7f, 0),
+		glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 1.6f, -1.0f)), glm::vec3(0.3f, 0.3f, 0.3f))
+	);
+	scene_->AddEntity(brown_chair);
 
 	// Load textures
 
@@ -352,7 +446,10 @@ void Application::OnInit() {
 	    "textures/texture1.png",
 	    "textures/texture2.png",
 	    "textures/texture3.png",
-	    "textures/texture4.png"
+	    "textures/texture4.png",
+	    "textures/texture5.png",
+	    "textures/texture6.png",
+	    "textures/texture7.png"
 	};
 	std::vector<float> texture_data_buffer_content;
 	
@@ -450,9 +547,9 @@ void Application::OnInit() {
     hover_info_buffer_->UploadData(&initial_hover, sizeof(HoverInfo));
 
     // Initialize camera state member variables
-    camera_pos_ = glm::vec3{ 0.0f, 1.0f, 5.0f };
+    camera_pos_ = glm::vec3{ 0.0f, 2.0f, 5.0f };
     camera_up_ = glm::vec3{ 0.0f, 1.0f, 0.0f }; // World up
-    camera_speed_ = 0.07f;
+    camera_speed_ = 0.1f;
 
     // Initialize new mouse/view variables
     yaw_ = -90.0f; // Point down -Z

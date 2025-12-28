@@ -22,6 +22,14 @@ RWTexture2D<int> entity_id_output : register(u0, space5);
 RWTexture2D<float4> accumulated_color : register(u0, space6);
 RWTexture2D<int> accumulated_samples : register(u0, space7);
 
+uint RandomSeed(uint2 pixel, uint depth, uint frame) {return (pixel.x * 73856093u) ^ (pixel.y * 19349663u) ^ (depth * 83492789u) ^ (frame * 735682483u);}
+float Random(inout uint seed) {
+    seed = seed * 747796405u + 2891336453u;
+    uint result = ((seed >> ((seed >> 28u) + 4u)) ^ seed) * 277803737u;
+    result = (result >> 22u) ^ result;
+    return float(result) / 4294967295.0;
+}
+
 // =====================================================================================================================================
 // ================================================== texture related ==================================================================
 // =====================================================================================================================================
@@ -29,12 +37,9 @@ RWTexture2D<int> accumulated_samples : register(u0, space7);
 ByteAddressBuffer texture_data_buffer : register(t0, space11);
 float3 GetTextureColor(uint texture_index, float2 uv) {
     uint width, height, offset;
-    if (texture_index == 0 || texture_index == 1 || texture_index == 3) {width = 1024; height = 1024;}
+    if (texture_index <= 2) {width = 1024; height = 1024;}
     else {width = 1520; height = 760;}
-    if (texture_index == 0) offset = 0;
-    else if (texture_index == 1) offset = 1024 * 1024;
-    else if (texture_index == 2) offset = 1024 * 1024 * 2;
-    else offset = 1024 * 1024 * 2 + 1520 * 760;
+    offset = 1024 * 1024 * texture_index;
     uint x = uint(uv.x * width) % width;
     uint y = uint(uv.y * height) % height;
     uint pixel_index = offset + y * width + x;
@@ -150,13 +155,6 @@ static const float3 AMBIENT_COLOR = float3(1.0, 1.0, 1.0);
 static const float AMBIENT_INTENSITY = 0.2;
 static const int AREA_LIGHT_SAMPLES = 1;
 
-uint RandomSeed(uint2 pixel, uint depth, uint frame) {return (pixel.x * 73856093u) ^ (pixel.y * 19349663u) ^ (depth * 83492789u) ^ (frame * 735682483u);}
-float Random(inout uint seed) {
-    seed = seed * 747796405u + 2891336453u;
-    uint result = ((seed >> ((seed >> 28u) + 4u)) ^ seed) * 277803737u;
-    result = (result >> 22u) ^ result;
-    return float(result) / 4294967295.0;
-}
 bool RussianRoulette(float throughput, inout uint seed) {
     if (throughput < 0.05) {
         float r = Random(seed);
@@ -306,7 +304,7 @@ void MissMain(inout RayPayload payload) {
     float u = 0.5 + atan2(ray_dir.z, ray_dir.x) / (2.0 * PI);
     float v = 0.5 - asin(ray_dir.y) / PI;
     float2 uv = float2(u, v);
-    float3 sky_color = GetTextureColor(2, uv);
+    float3 sky_color = GetTextureColor(3, uv);
     payload.color = sky_color * payload.throughput;
     payload.hit = false;
     payload.hit_distance = 10000.0;
@@ -352,7 +350,7 @@ void ClosestHitMain(inout RayPayload payload, in BuiltInTriangleIntersectionAttr
     if (material_idx == 100) {
         float ux = (hit_point.x + 10.0) / 20.0;
         float uy = (hit_point.z + 10.0) / 20.0;
-        float3 height_col = GetTextureColor(3, float2(ux, uy));
+        float3 height_col = GetTextureColor(2, float2(ux, uy));
         float height = (height_col.x + height_col.y + height_col.z) / 3.0;
         hit_point = hit_point + 15 * (1 - height) * norm;
     }

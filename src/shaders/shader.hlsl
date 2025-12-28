@@ -35,11 +35,58 @@ float Random(inout uint seed) {
 // =====================================================================================================================================
 
 ByteAddressBuffer texture_data_buffer : register(t0, space11);
-float3 GetTextureColor(uint texture_index, float2 uv) {
+float3 GetTextureColor(uint texture_index, float2 uv, float lev = 0) {
+    if (texture_index == 0) {
+        int mip = (int)lev;
+        float frac = lev - (float)mip;
+        mip = min(mip, 10);
+        int next_mip = min(mip + 1, 10);
+        uint base_offset = 0;
+        uint mip_offset = 0;
+        uint mip_width = 1024;
+        uint mip_height = 1024;
+        for (int i = 0; i < mip; ++i) {
+            mip_offset += mip_width * mip_height;
+            mip_width = mip_width / 2;
+            mip_height = mip_height / 2;
+        }
+        uint next_mip_offset = mip_offset + mip_width * mip_height;
+        uint next_mip_width = mip_width / 2;
+        uint next_mip_height = mip_height / 2;
+        if (next_mip == mip) {
+            next_mip_width = mip_width;
+            next_mip_height = mip_height;
+            next_mip_offset = mip_offset;
+        }
+        uint offset = base_offset + mip_offset;
+        uint width = mip_width;
+        uint height = mip_height;
+        uint x = uint(uv.x * width) % width;
+        uint y = uint(uv.y * height) % height;
+        uint pixel_index = offset + y * width + x;
+        uint byte_offset = pixel_index * 4 * 4;
+        float r0 = asfloat(texture_data_buffer.Load(byte_offset));
+        float g0 = asfloat(texture_data_buffer.Load(byte_offset + 4));
+        float b0 = asfloat(texture_data_buffer.Load(byte_offset + 8));
+        offset = base_offset + next_mip_offset;
+        width = next_mip_width;
+        height = next_mip_height;
+        x = uint(uv.x * width) % width;
+        y = uint(uv.y * height) % height;
+        pixel_index = offset + y * width + x;
+        byte_offset = pixel_index * 4 * 4;
+        float r1 = asfloat(texture_data_buffer.Load(byte_offset));
+        float g1 = asfloat(texture_data_buffer.Load(byte_offset + 4));
+        float b1 = asfloat(texture_data_buffer.Load(byte_offset + 8));
+        float r = lerp(r0, r1, frac);
+        float g = lerp(g0, g1, frac);
+        float b = lerp(b0, b1, frac);
+        return float3(r, g, b);
+    }
     uint width, height, offset;
-    if (texture_index <= 2) {width = 1024; height = 1024;}
-    else {width = 1520; height = 760;}
-    offset = 1024 * 1024 * texture_index;
+    if (texture_index == 1) {width = 1024; height = 1024; offset = 1398101;}
+    else if (texture_index == 2) {width = 1024; height = 1024; offset = 2446677;}
+    else {width = 1520; height = 760; offset = 3495253;}
     uint x = uint(uv.x * width) % width;
     uint y = uint(uv.y * height) % height;
     uint pixel_index = offset + y * width + x;
@@ -48,6 +95,20 @@ float3 GetTextureColor(uint texture_index, float2 uv) {
     float g = asfloat(texture_data_buffer.Load(byte_offset + 4));
     float b = asfloat(texture_data_buffer.Load(byte_offset + 8));
     return float3(r, g, b);
+}
+float CalculateGroundMipLevel(float3 hit_point, float3 view_dir, float3 camera_pos) {
+    const float GROUND_SIZE = 20.0;
+    const float TEXTURE_SIZE = 1024.0;
+    const float PIXEL_ANGLE = 0.0003;
+    float ray_length = length(hit_point - camera_pos);
+    float cos_theta = abs(dot(float3(0,1,0), -view_dir));
+    cos_theta = max(cos_theta, 0.001);
+    float pixel_world_size = ray_length * PIXEL_ANGLE / cos_theta;
+    float texels_per_world_unit = TEXTURE_SIZE / GROUND_SIZE;
+    float texel_coverage = pixel_world_size * texels_per_world_unit;
+    float mip_level = log2(texel_coverage);
+    mip_level += 0.5;
+    return clamp(mip_level, 0.0, 10.0);
 }
 
 // =====================================================================================================================================
@@ -149,7 +210,7 @@ static const AreaLight AREA_LIGHT = {
     5.0,
     5.0,
     float3(1.0, 0.99, 0.98),
-    25.0
+    50.0
 };
 static const float3 AMBIENT_COLOR = float3(1.0, 1.0, 1.0);
 static const float AMBIENT_INTENSITY = 0.2;
@@ -325,9 +386,12 @@ void ClosestHitMain(inout RayPayload payload, in BuiltInTriangleIntersectionAttr
     uint seed = RandomSeed(pixel_coords, payload.depth, accumulated_samples[pixel_coords]);
     // color texture for the ground
     if (material_idx == 0) {
+        float3 camera_pos = WorldRayOrigin();
+        float3 view_dir = normalize(-WorldRayDirection());
+        float mip_lev = CalculateGroundMipLevel(hit_point, view_dir, camera_pos);
         float ux = (hit_point.x + 10.0) / 20.0;
         float uy = (hit_point.z + 10.0) / 20.0;
-        mat.base_color = GetTextureColor(0, float2(ux, uy));
+        mat.base_color = GetTextureColor(0, float2(ux, uy), mip_lev);
     }
     if (material_idx == 100) {
         float3 local_pos = hit_point - float3(0.0f, 0.5f, 0.0f);

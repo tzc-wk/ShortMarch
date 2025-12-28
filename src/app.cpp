@@ -349,45 +349,89 @@ void Application::OnInit() {
 	// Load textures
 
 	std::vector<std::string> texture_paths = {
-    	"textures/texture1.png",
-    	"textures/texture2.png",
-    	"textures/texture3.png",
-    	"textures/texture4.png"
+	    "textures/texture1.png",
+	    "textures/texture2.png",
+	    "textures/texture3.png",
+	    "textures/texture4.png"
 	};
 	std::vector<float> texture_data_buffer_content;
-	for (const auto& path : texture_paths) {
-    	std::string full_path = grassland::FindAssetFile(path);
-    	grassland::LogInfo("Trying to load texture from: {}", full_path);
-    	int width, height, channels;
-    	unsigned char* data = stbi_load(full_path.c_str(), &width, &height, &channels, 4);
-    	if (data) {
-        	std::unique_ptr<grassland::graphics::Image> texture_image;
-        	core_->CreateImage(width, height, 
-                          grassland::graphics::IMAGE_FORMAT_R8G8B8A8_UNORM,
-                          &texture_image);
-        
-        	size_t data_size = width * height * 4;
-        	std::vector<uint8_t> pixel_data(data_size);
-        	memcpy(pixel_data.data(), data, data_size);
-        	texture_image->UploadData(pixel_data.data());
-        	texture_images_.push_back(std::move(texture_image));
-        	for (size_t i = 0; i < data_size; i += 4) {
-            	texture_data_buffer_content.push_back(data[i] / 255.0f);
-            	texture_data_buffer_content.push_back(data[i + 1] / 255.0f);
-            	texture_data_buffer_content.push_back(data[i + 2] / 255.0f);
-            	texture_data_buffer_content.push_back(data[i + 3] / 255.0f);
-        	}
-        	stbi_image_free(data);
-        	grassland::LogInfo("Successfully loaded texture from: {}", full_path);
-		}
+	
+	for (int tex_idx = 0; tex_idx < texture_paths.size(); ++tex_idx) {
+	    const auto& path = texture_paths[tex_idx];
+	    std::string full_path = grassland::FindAssetFile(path);
+	    grassland::LogInfo("Trying to load texture from: {}", full_path);
+	    int width, height, channels;
+	    unsigned char* data = stbi_load(full_path.c_str(), &width, &height, &channels, 4);
+	    
+	    if (data) {
+	        if (tex_idx == 0) {
+	            int current_width = width;
+	            int current_height = height;
+	            unsigned char* current_data = data;
+	            
+	            for (int mip = 0; mip <= 10; ++mip) {
+	                for (int i = 0; i < current_width * current_height; ++i) {
+	                    int x = i % current_width;
+	                    int y = i / current_width;
+	                    int base_idx = (y * current_width + x) * 4;
+	                    
+	                    float r = current_data[base_idx] / 255.0f;
+	                    float g = current_data[base_idx + 1] / 255.0f;
+	                    float b = current_data[base_idx + 2] / 255.0f;
+	                    float a = current_data[base_idx + 3] / 255.0f;
+	                    
+	                    texture_data_buffer_content.push_back(r);
+	                    texture_data_buffer_content.push_back(g);
+	                    texture_data_buffer_content.push_back(b);
+	                    texture_data_buffer_content.push_back(a);
+	                }
+	                
+	                if (current_width > 1 && current_height > 1) {
+	                    int next_width = current_width / 2;
+	                    int next_height = current_height / 2;
+	                    unsigned char* next_data = new unsigned char[next_width * next_height * 4];
+	                    
+	                    for (int y = 0; y < next_height; ++y) {
+	                        for (int x = 0; x < next_width; ++x) {
+	                            for (int c = 0; c < 4; ++c) {
+	                                float sum = 0.0f;
+	                                sum += current_data[((y*2) * current_width + (x*2)) * 4 + c];
+	                                sum += current_data[((y*2) * current_width + (x*2+1)) * 4 + c];
+	                                sum += current_data[((y*2+1) * current_width + (x*2)) * 4 + c];
+	                                sum += current_data[((y*2+1) * current_width + (x*2+1)) * 4 + c];
+	                                next_data[(y * next_width + x) * 4 + c] = (unsigned char)(sum / 4.0f);
+	                            }
+	                        }
+	                    }
+	                    
+	                    if (mip > 0) delete[] current_data;
+	                    current_data = next_data;
+	                    current_width = next_width;
+	                    current_height = next_height;
+	                }
+	            }
+	            delete[] data;
+	        } else {
+	            for (size_t i = 0; i < width * height * 4; i += 4) {
+	                texture_data_buffer_content.push_back(data[i] / 255.0f);
+	                texture_data_buffer_content.push_back(data[i + 1] / 255.0f);
+	                texture_data_buffer_content.push_back(data[i + 2] / 255.0f);
+	                texture_data_buffer_content.push_back(data[i + 3] / 255.0f);
+	            }
+	            stbi_image_free(data);
+	        }
+	        
+	        grassland::LogInfo("Successfully loaded texture from: {}", full_path);
+	    }
+	    grassland::LogInfo("{}", texture_data_buffer_content.size());
 	}
 	
 	if (!texture_data_buffer_content.empty()) {
-    	size_t buffer_size = texture_data_buffer_content.size() * sizeof(float);
-    	core_->CreateBuffer(buffer_size, 
-                       grassland::graphics::BUFFER_TYPE_DYNAMIC,
-                       &texture_data_buffer_);
-    	texture_data_buffer_->UploadData(texture_data_buffer_content.data(), buffer_size);
+	    size_t buffer_size = texture_data_buffer_content.size() * sizeof(float);
+	    core_->CreateBuffer(buffer_size, 
+	                       grassland::graphics::BUFFER_TYPE_DYNAMIC,
+	                       &texture_data_buffer_);
+	    texture_data_buffer_->UploadData(texture_data_buffer_content.data(), buffer_size);
 	}
 
     // Build acceleration structures

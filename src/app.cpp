@@ -339,12 +339,12 @@ void Application::OnInit() {
 		glm::vec3(10.0f, 0.1f, 10.0f))
 	);
 	scene_->AddEntity(ground);
-	auto red_cube = std::make_shared<Entity>(
-		"meshes/cube.obj",
-		Material(glm::vec3(1.0f, 0.2f, 0.2f), 0.5f, 0.0f),
-		glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.5f, 0.0f))
-	);
-	scene_->AddEntity(red_cube);
+//	auto red_cube = std::make_shared<Entity>(
+//		"meshes/cube.obj",
+//		Material(glm::vec3(1.0f, 0.2f, 0.2f), 0.5f, 0.0f),
+//		glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.5f, 0.0f))
+//	);
+//	scene_->AddEntity(red_cube);
 
 	// Load textures
 

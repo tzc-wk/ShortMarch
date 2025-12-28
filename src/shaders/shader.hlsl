@@ -71,7 +71,7 @@ uint LoadUintByIndex(ByteAddressBuffer buffer, uint index_position) {
 }
 float3 calcNormal(uint instance_id, uint primitive_index, float3 hit_point) {
     // normal map
-    if (instance_id == 0) {
+    if (instance_id == 100) {
         float ux = (hit_point.x + 10.0) / 20.0;
         float uy = (hit_point.z + 10.0) / 20.0;
         float3 normal = GetTextureColor(0, float2(ux, uy)) - float3(0.5, 0.5, 0.5);
@@ -326,7 +326,7 @@ void ClosestHitMain(inout RayPayload payload, in BuiltInTriangleIntersectionAttr
     uint2 pixel_coords = DispatchRaysIndex().xy;
     uint seed = RandomSeed(pixel_coords, payload.depth, accumulated_samples[pixel_coords]);
     // color texture for the ground
-    if (material_idx == 100) {
+    if (material_idx == 0) {
         float ux = (hit_point.x + 10.0) / 20.0;
         float uy = (hit_point.z + 10.0) / 20.0;
         mat.base_color = GetTextureColor(0, float2(ux, uy));

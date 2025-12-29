@@ -330,13 +330,12 @@ void Application::OnInit() {
 		glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 1.6f, -1.5f)), glm::vec3(0.3f, 0.3f, 0.3f))
 	);
 	scene_->AddEntity(brown_chair);
-
-//	auto sss_cube = std::make_shared<Entity>(
-//    	"meshes/cube.obj",
-//    	Material(glm::vec3(0.5f, 0.8f, 0.6f), 0.3f, 0.0f, 0.9f, 1.4f, 0.2f, 0.8f),
-//    	glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.5f, 0.0f))
-//	);
-//	scene_->AddEntity(sss_cube);
+	auto sss_sculpture = std::make_shared<Entity>(
+    	"meshes/happy.obj",
+    	Material(glm::vec3(0.5f, 0.8f, 0.6f), 0.3f, 0.0f, 0.9f, 1.4f, 0.2f, 0.8f),
+    	glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(4.0f, -1.0f, -0.5f)), glm::vec3(18.0f, 18.0f, 18.0f))
+	);
+	scene_->AddEntity(sss_sculpture);
 
 	// Load textures
 

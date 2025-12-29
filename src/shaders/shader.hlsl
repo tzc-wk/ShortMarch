@@ -496,15 +496,12 @@ void ClosestHitMain(inout RayPayload payload, in BuiltInTriangleIntersectionAttr
                 test_ray.Direction = refract_dir;
                 test_ray.TMin = 0.001;
                 test_ray.TMax = 10000.0;
-                
                 RayPayload test_payload;
                 test_payload.hit = false;
                 test_payload.instance_id = InstanceID();
                 test_payload.depth = 100;
                 TraceRay(as, RAY_FLAG_NONE, 0xFF, 0, 1, 0, test_ray, test_payload);
-                
                 float d = test_payload.hit ? test_payload.hit_distance : 10000.0;
-                
                 if (d > l) {
                     float3 scatter_pos = hit_point - norm * 0.001 + refract_dir * l;
                     float g = mat.anisotropy_g;
@@ -515,10 +512,8 @@ void ClosestHitMain(inout RayPayload payload, in BuiltInTriangleIntersectionAttr
                         float t = (1.0 - g * g) / (1.0 - g + 2.0 * g * Random(seed));
                         cos_theta = (1.0 + g * g - t * t) / (2.0 * g);
                     }
-                    
                     float sin_theta = sqrt(max(0.0, 1.0 - cos_theta * cos_theta));
                     float phi = 2.0 * PI * Random(seed);
-                    
                     float3 u, v;
                     if (abs(refract_dir.x) > 0.1) {
                         u = normalize(cross(refract_dir, float3(0, 1, 0)));
@@ -526,16 +521,13 @@ void ClosestHitMain(inout RayPayload payload, in BuiltInTriangleIntersectionAttr
                         u = normalize(cross(refract_dir, float3(1, 0, 0)));
                     }
                     v = cross(refract_dir, u);
-                    
                     float3 scatter_dir = sin_theta * cos(phi) * u + sin_theta * sin(phi) * v + cos_theta * refract_dir;
                     scatter_dir = normalize(scatter_dir);
-                    
                     RayDesc scatter_ray;
                     scatter_ray.Origin = scatter_pos;
                     scatter_ray.Direction = scatter_dir;
                     scatter_ray.TMin = 0.001;
                     scatter_ray.TMax = 10000.0;
-                    
                     RayPayload scatter_payload;
                     scatter_payload.color = float3(0, 0, 0);
                     scatter_payload.hit = false;
@@ -544,7 +536,6 @@ void ClosestHitMain(inout RayPayload payload, in BuiltInTriangleIntersectionAttr
                     scatter_payload.depth = payload.depth + 1;
                     scatter_payload.throughput = payload.throughput * mat.transmission * (1.0 - reflectivity);
                     scatter_payload.inside_material = true;
-                    
                     TraceRay(as, RAY_FLAG_NONE, 0xFF, 0, 1, 0, scatter_ray, scatter_payload);
                     payload.color += scatter_payload.color;
                     return;
@@ -555,7 +546,6 @@ void ClosestHitMain(inout RayPayload payload, in BuiltInTriangleIntersectionAttr
             refract_ray.Direction = refract_dir;
             refract_ray.TMin = 0.001;
             refract_ray.TMax = 10000.0;
-            
             RayPayload refract_payload;
             refract_payload.color = float3(0, 0, 0);
             refract_payload.hit = false;
@@ -564,7 +554,6 @@ void ClosestHitMain(inout RayPayload payload, in BuiltInTriangleIntersectionAttr
             refract_payload.depth = payload.depth + 1;
             refract_payload.throughput = payload.throughput * mat.transmission * (1.0 - reflectivity);
             refract_payload.inside_material = !payload.inside_material;
-            
             TraceRay(as, RAY_FLAG_NONE, 0xFF, 0, 1, 0, refract_ray, refract_payload);
             payload.color += refract_payload.color;
         }

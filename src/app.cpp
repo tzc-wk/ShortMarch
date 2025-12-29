@@ -350,6 +350,13 @@ void Application::OnInit() {
     	glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(2.75f, -1.05f, -0.5f)), glm::vec3(20.0f, 20.0f, 20.0f))
 	);
 	scene_->AddEntity(sss_sculpture);
+	auto red_apple = std::make_shared<Entity>(
+    	"meshes/appleuvw.obj",
+    	Material(glm::vec3(0.9f, 0.05f, 0.0f), 0.8f, 0.0f),
+    	glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(-1.5f, 4.0f, 0.0f)), glm::vec3(0.006f, 0.006f, 0.006f)),
+    	glm::vec3(0.0f, -1000.0f, 0.0f)
+	);
+	scene_->AddEntity(red_apple);
 
 	// Load textures
 
@@ -452,12 +459,28 @@ void Application::OnInit() {
 
 	AddPointLight(PointLight(glm::vec3(0, 0.5, 0), glm::vec3(1.0f, 0.95f, 0.9f), 0.0f));
 	AddAreaLight(AreaLight(
-    	glm::vec3(0, 6.0f, -2.2f), 
+    	glm::vec3(0, 7.0f, -2.2f), 
     	glm::normalize(glm::vec3(0, -1, 0)), 
     	glm::normalize(glm::vec3(0, 0, 1)),
     	2.0f, 2.0f, 
     	glm::vec3(1.0f, 0.99f, 0.98f), 
     	70.0f
+	));
+	AddAreaLight(AreaLight(
+    	glm::vec3(-8.0f, 7.0f, -8.0f), 
+    	glm::normalize(glm::vec3(0, -1, 0)), 
+    	glm::normalize(glm::vec3(0, 0, 1)),
+    	1.0f, 1.0f, 
+    	glm::vec3(1.0f, 0.0f, 0.0f), 
+    	10.0f
+	));
+	AddAreaLight(AreaLight(
+    	glm::vec3(8.0f, 7.0f, -8.0f), 
+    	glm::normalize(glm::vec3(0, -1, 0)), 
+    	glm::normalize(glm::vec3(0, 0, 1)),
+    	1.0f, 1.0f, 
+    	glm::vec3(0.0f, 1.0f, 0.0f), 
+    	10.0f
 	));
 	
 	size_t point_lights_buffer_size = point_lights_.size() * sizeof(PointLight);

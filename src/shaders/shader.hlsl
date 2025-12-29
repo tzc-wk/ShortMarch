@@ -222,7 +222,7 @@ static const float3 AMBIENT_COLOR = float3(1.0, 1.0, 1.0);
 static const float AMBIENT_INTENSITY = 0.2;
 static const int AREA_LIGHT_SAMPLES = 1;
 static const int NUMBER_OF_POINT_LIGHTS = 1;
-static const int NUMBER_OF_AREA_LIGHTS = 1;
+static const int NUMBER_OF_AREA_LIGHTS = 3;
 
 bool RussianRoulette(float throughput, inout uint seed) {
     if (throughput < 0.05) {
@@ -440,7 +440,6 @@ void ClosestHitMain(inout RayPayload payload, in BuiltInTriangleIntersectionAttr
     payload.color = direct_light * payload.throughput;
     if (payload.depth < MAX_DEPTH) {
         float reflectivity = min((1.0 - mat.roughness) * (0.3 + mat.metallic * 0.8), 1.0);
-        if (reflectivity < 0.01) return;
         float reflection_prob = reflectivity;
         float refraction_prob = mat.transmission * (1.0 - reflectivity);
         float absorption_prob = 1.0 - reflection_prob - refraction_prob;

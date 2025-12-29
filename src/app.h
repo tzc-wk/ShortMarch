@@ -36,6 +36,12 @@ struct AreaLight {
           color(col), intensity(intens) {}
 };
 
+struct TextureInfo {
+    uint32_t width;
+    uint32_t height;
+    uint32_t offset;
+};
+
 class Application {
 public:
     Application(grassland::graphics::BackendAPI api = grassland::graphics::BACKEND_API_DEFAULT);
@@ -85,6 +91,8 @@ private:
     // Textures
     std::vector<std::unique_ptr<grassland::graphics::Image>> texture_images_;
     std::unique_ptr<grassland::graphics::Buffer> texture_data_buffer_;
+    std::vector<TextureInfo> texture_infos_;
+    std::unique_ptr<grassland::graphics::Buffer> texture_info_buffer_;
     
     // Lightings
     std::vector<PointLight> point_lights_;

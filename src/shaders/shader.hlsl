@@ -37,7 +37,17 @@ float Random(inout uint seed) {
 // =====================================================================================================================================
 
 ByteAddressBuffer texture_data_buffer : register(t0, space11);
+
+struct TextureInfo {
+    uint width;
+    uint height;
+    uint offset;
+};
+
+StructuredBuffer<TextureInfo> texture_infos : register(t0, space14);
+
 float3 GetTextureColor(uint texture_index, float2 uv, float lev = 0) {
+    TextureInfo info = texture_infos[texture_index];
     if (texture_index == 0) {
         lev = clamp(lev, 0.0, 10.0);
         int mip = (int)lev;
@@ -86,13 +96,9 @@ float3 GetTextureColor(uint texture_index, float2 uv, float lev = 0) {
         float b = lerp(b0, b1, frac);
         return float3(r, g, b);
     }
-    uint width, height, offset;
-    if (texture_index == 1) {width = 1024; height = 1024; offset = 1398101;}
-    else if (texture_index == 2) {width = 1024; height = 1024; offset = 2446677;}
-    else if (texture_index == 3) {width = 1520; height = 760; offset = 3495253;}
-    else if (texture_index == 4) {width = 1000; height = 1000; offset = 4650453;}
-    else if (texture_index == 5) {width = 1500; height = 1500; offset = 5650453;}
-    else if (texture_index == 6) {width = 1080; height = 1080; offset = 7900453;}
+    uint width = info.width;
+    uint height = info.height;
+    uint offset = info.offset;
     uint x = uint(uv.x * width) % width;
     uint y = uint(uv.y * height) % height;
     uint pixel_index = offset + y * width + x;

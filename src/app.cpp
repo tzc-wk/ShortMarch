@@ -358,75 +358,87 @@ void Application::OnInit() {
 	    unsigned char* data = stbi_load(full_path.c_str(), &width, &height, &channels, 4);
 	    
 	    if (data) {
-	        if (tex_idx == 0) {
-	            int current_width = width;
+		    if (tex_idx == 0) {
+		        TextureInfo info;
+		        info.width = width;
+		        info.height = height;
+		        info.offset = (uint32_t)(texture_data_buffer_content.size() / 4);
+		        texture_infos_.push_back(info);
+		        int current_width = width;
 	            int current_height = height;
 	            unsigned char* current_data = data;
-	            
-	            for (int mip = 0; mip <= 10; ++mip) {
-	                for (int i = 0; i < current_width * current_height; ++i) {
-	                    int x = i % current_width;
-	                    int y = i / current_width;
-	                    int base_idx = (y * current_width + x) * 4;
-	                    
-	                    float r = current_data[base_idx] / 255.0f;
-	                    float g = current_data[base_idx + 1] / 255.0f;
-	                    float b = current_data[base_idx + 2] / 255.0f;
-	                    float a = current_data[base_idx + 3] / 255.0f;
-	                    
-	                    texture_data_buffer_content.push_back(r);
-	                    texture_data_buffer_content.push_back(g);
-	                    texture_data_buffer_content.push_back(b);
-	                    texture_data_buffer_content.push_back(a);
-	                }
-	                
-	                if (current_width > 1 && current_height > 1) {
-	                    int next_width = current_width / 2;
-	                    int next_height = current_height / 2;
-	                    unsigned char* next_data = new unsigned char[next_width * next_height * 4];
-	                    
-	                    for (int y = 0; y < next_height; ++y) {
-	                        for (int x = 0; x < next_width; ++x) {
-	                            for (int c = 0; c < 4; ++c) {
-	                                float sum = 0.0f;
-	                                sum += current_data[((y*2) * current_width + (x*2)) * 4 + c];
-	                                sum += current_data[((y*2) * current_width + (x*2+1)) * 4 + c];
-	                                sum += current_data[((y*2+1) * current_width + (x*2)) * 4 + c];
-	                                sum += current_data[((y*2+1) * current_width + (x*2+1)) * 4 + c];
-	                                next_data[(y * next_width + x) * 4 + c] = (unsigned char)(sum / 4.0f);
-	                            }
-	                        }
-	                    }
-	                    
-	                    if (mip > 0) delete[] current_data;
-	                    current_data = next_data;
-	                    current_width = next_width;
-	                    current_height = next_height;
-	                }
-	            }
-	            delete[] data;
-	        } else {
-	            for (size_t i = 0; i < width * height * 4; i += 4) {
-	                texture_data_buffer_content.push_back(data[i] / 255.0f);
-	                texture_data_buffer_content.push_back(data[i + 1] / 255.0f);
-	                texture_data_buffer_content.push_back(data[i + 2] / 255.0f);
-	                texture_data_buffer_content.push_back(data[i + 3] / 255.0f);
-	            }
-	            stbi_image_free(data);
-	        }
-	        
-	        grassland::LogInfo("Successfully loaded texture from: {}", full_path);
-	    }
-	    grassland::LogInfo("{}", texture_data_buffer_content.size());
+		        
+		        for (int mip = 0; mip <= 10; ++mip) {
+		            for (int i = 0; i < current_width * current_height; ++i) {
+		                int x = i % current_width;
+		                int y = i / current_width;
+		                int base_idx = (y * current_width + x) * 4;
+		                
+		                float r = current_data[base_idx] / 255.0f;
+		                float g = current_data[base_idx + 1] / 255.0f;
+		                float b = current_data[base_idx + 2] / 255.0f;
+		                float a = current_data[base_idx + 3] / 255.0f;
+		                
+		                texture_data_buffer_content.push_back(r);
+		                texture_data_buffer_content.push_back(g);
+		                texture_data_buffer_content.push_back(b);
+		                texture_data_buffer_content.push_back(a);
+		            }
+		            
+		            if (current_width > 1 && current_height > 1) {
+		                int next_width = current_width / 2;
+		                int next_height = current_height / 2;
+		                unsigned char* next_data = new unsigned char[next_width * next_height * 4];
+		                
+		                for (int y = 0; y < next_height; ++y) {
+		                    for (int x = 0; x < next_width; ++x) {
+		                        for (int c = 0; c < 4; ++c) {
+		                            float sum = 0.0f;
+		                            sum += current_data[((y*2) * current_width + (x*2)) * 4 + c];
+		                            sum += current_data[((y*2) * current_width + (x*2+1)) * 4 + c];
+		                            sum += current_data[((y*2+1) * current_width + (x*2)) * 4 + c];
+		                            sum += current_data[((y*2+1) * current_width + (x*2+1)) * 4 + c];
+		                            next_data[(y * next_width + x) * 4 + c] = (unsigned char)(sum / 4.0f);
+		                        }
+		                    }
+		                }
+		                
+		                if (mip > 0) delete[] current_data;
+		                current_data = next_data;
+		                current_width = next_width;
+		                current_height = next_height;
+		            }
+		        }
+		        delete[] data;
+		    } else {
+		        TextureInfo info;
+		        info.width = width;
+		        info.height = height;
+		        info.offset = (uint32_t)(texture_data_buffer_content.size() / 4);
+		        texture_infos_.push_back(info);
+		        
+		        for (size_t i = 0; i < width * height * 4; i += 4) {
+		            texture_data_buffer_content.push_back(data[i] / 255.0f);
+		            texture_data_buffer_content.push_back(data[i + 1] / 255.0f);
+		            texture_data_buffer_content.push_back(data[i + 2] / 255.0f);
+		            texture_data_buffer_content.push_back(data[i + 3] / 255.0f);
+		        }
+		        stbi_image_free(data);
+		    }
+		    grassland::LogInfo("Successfully loaded texture from: {}", full_path);
+		} else grassland::LogInfo("Failed to load texture from: {}", full_path);
 	}
 	
-	if (!texture_data_buffer_content.empty()) {
-	    size_t buffer_size = texture_data_buffer_content.size() * sizeof(float);
-	    core_->CreateBuffer(buffer_size, 
-	                       grassland::graphics::BUFFER_TYPE_DYNAMIC,
-	                       &texture_data_buffer_);
-	    texture_data_buffer_->UploadData(texture_data_buffer_content.data(), buffer_size);
-	}
+	size_t buffer_size = texture_data_buffer_content.size() * sizeof(float);
+	core_->CreateBuffer(buffer_size, 
+	                    grassland::graphics::BUFFER_TYPE_DYNAMIC,
+	                    &texture_data_buffer_);
+	texture_data_buffer_->UploadData(texture_data_buffer_content.data(), buffer_size);
+	size_t info_buffer_size = texture_infos_.size() * sizeof(TextureInfo);
+	core_->CreateBuffer(info_buffer_size, 
+		                grassland::graphics::BUFFER_TYPE_DYNAMIC,
+		                &texture_info_buffer_);
+	texture_info_buffer_->UploadData(texture_infos_.data(), info_buffer_size);
 	
 	// Add lightings
 	
@@ -524,6 +536,7 @@ void Application::OnInit() {
     program_->AddResourceBinding(grassland::graphics::RESOURCE_TYPE_STORAGE_BUFFER, 1);          // space11 - texture data
 	program_->AddResourceBinding(grassland::graphics::RESOURCE_TYPE_STORAGE_BUFFER, 1);          // space12 - point lights
 	program_->AddResourceBinding(grassland::graphics::RESOURCE_TYPE_STORAGE_BUFFER, 1);          // space13 - area lights
+	program_->AddResourceBinding(grassland::graphics::RESOURCE_TYPE_STORAGE_BUFFER, 1);          // space14 - texture info
 	program_->Finalize();
 }
 
@@ -1005,6 +1018,9 @@ void Application::OnRender() {
 	}
 	command_context->CmdBindResources(12, { point_lights_buffer_.get() }, grassland::graphics::BIND_POINT_RAYTRACING);
 	command_context->CmdBindResources(13, { area_lights_buffer_.get() }, grassland::graphics::BIND_POINT_RAYTRACING);
+	if (texture_info_buffer_) {
+		command_context->CmdBindResources(14, { texture_info_buffer_.get() }, grassland::graphics::BIND_POINT_RAYTRACING);
+	}
 	command_context->CmdDispatchRays(window_->GetWidth(), window_->GetHeight(), 1);
     
     // When camera is disabled, increment sample count and use accumulated image

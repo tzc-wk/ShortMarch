@@ -223,9 +223,23 @@ void Application::OnInit() {
 
     // Add entities to the scene
     
+    // color texture version:
+//	auto ground = std::make_shared<Entity>(
+//		"meshes/cube.obj",
+//		Material(glm::vec3(0.4f, 0.4f, 0.4f), 0.8f, 0.0f, 0.0f, 1.5f, 0.0f, 0.0f, TextureType(0, 1.0f/20.0f, 0.0f, 0.0f, 10.0f/20.0f, 0.0f, 0.0f, 1.0/20.0f, 10.0f/20.0f)),
+//		glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, -1.0f, 0.0f)), 
+//		glm::vec3(10.0f, 0.1f, 10.0f))
+//	);
+    // height map version:
+//	auto ground = std::make_shared<Entity>(
+//		"meshes/cube.obj",
+//		Material(glm::vec3(0.4f, 0.4f, 0.4f), 0.8f, 0.0f, 0.0f, 1.5f, 0.0f, 0.0f, TextureType(2, 1.0f/20.0f, 0.0f, 0.0f, 10.0f/20.0f, 0.0f, 0.0f, 1.0/20.0f, 10.0f/20.0f, -30.0, 30.0)),
+//		glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, -1.0f, 0.0f)), 
+//		glm::vec3(10.0f, 0.1f, 10.0f))
+//	);
 	auto ground = std::make_shared<Entity>(
 		"meshes/cube.obj",
-		Material(glm::vec3(0.8f, 0.8f, 0.8f), 0.8f, 0.0f),
+		Material(glm::vec3(0.4f, 0.4f, 0.4f), 0.8f, 0.0f, 0.0f, 1.5f, 0.0f, 0.0f, TextureType(1, 1.0f/20.0f, 0.0f, 0.0f, 10.0f/20.0f, 0.0f, 0.0f, 1.0/20.0f, 10.0f/20.0f, 1.0f, 0.0f, 0.0f)),
 		glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, -1.0f, 0.0f)), 
 		glm::vec3(10.0f, 0.1f, 10.0f))
 	);
@@ -244,63 +258,63 @@ void Application::OnInit() {
 	scene_->AddEntity(teapot);
 	auto left_wall = std::make_shared<Entity>(
 		"meshes/cube.obj",
-		Material(glm::vec3(0.4f, 0.325f, 0.25f), 0.8f, 0.0f),
+		Material(glm::vec3(0.4f, 0.325f, 0.25f), 0.8f, 0.0f, 0.0f, 1.5f, 0.0f, 0.0f, TextureType(5, 0.0f, 0.0f, 1.0f/8.5f, 10.0f/8.5f, 0.0f, 1.0f/8.5f, 0, 1.0f/8.5f)),
 		glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(-10.0f, 0.0f, 0.0f)), 
 		glm::vec3(0.1f, 10.0f, 10.0f))
 	);
 	scene_->AddEntity(left_wall);
 	auto right_wall = std::make_shared<Entity>(
 		"meshes/cube.obj",
-		Material(glm::vec3(0.4f, 0.325f, 0.25f), 0.8f, 0.0f),
+		Material(glm::vec3(0.4f, 0.325f, 0.25f), 0.8f, 0.0f, 0.0f, 1.5f, 0.0f, 0.0f, TextureType(5, 0.0f, 0.0f, 1.0f/8.5f, 10.0f/8.5f, 0.0f, 1.0f/8.5f, 0, 1.0f/8.5f)),
 		glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(10.0f, 0.0f, 0.0f)), 
 		glm::vec3(0.1f, 10.0f, 10.0f))
 	);
 	scene_->AddEntity(right_wall);
 	auto back_wall = std::make_shared<Entity>(
 		"meshes/cube.obj",
-		Material(glm::vec3(0.4f, 0.325f, 0.25f), 0.8f, 0.0f),
+		Material(glm::vec3(0.4f, 0.325f, 0.25f), 0.8f, 0.0f, 0.0f, 1.5f, 0.0f, 0.0f, TextureType(0, 1.0f/8.5f, 0.0f, 0.0f, 10.0f/8.5f, 0.0f, 1.0f/8.5f, 0, 1.0f/8.5f)),
 		glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 10.0f)), 
 		glm::vec3(10.0f, 10.0f, 0.1f))
 	);
 	scene_->AddEntity(back_wall);
 	auto ceiling = std::make_shared<Entity>(
 		"meshes/cube.obj",
-		Material(glm::vec3(0.8f, 0.8f, 0.8f), 0.8f, 0.0f),
+		Material(glm::vec3(0.8f, 0.8f, 0.8f), 0.8f, 0.0f, 0.0f, 1.5f, 0.0f, 0.0f, TextureType(4, 1.0f/20.0f, 0.0f, 0.0f, 10.0f/20.0f, 0.0f, 0.0f, 1.0/20.0f, 10.0f/20.0f)),
 		glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 7.5f, 0.0f)), 
 		glm::vec3(10.0f, 0.1f, 10.0f))
 	);
 	scene_->AddEntity(ceiling);
 	auto front_wall1 = std::make_shared<Entity>(
 		"meshes/cube.obj",
-		Material(glm::vec3(0.4f, 0.325f, 0.25f), 0.8f, 0.0f),
+		Material(glm::vec3(0.4f, 0.325f, 0.25f), 0.8f, 0.0f, 0.0f, 1.5f, 0.0f, 0.0f, TextureType(0, 1.0f/8.5f, 0.0f, 0.0f, 10.0f/8.5f, 0.0f, 1.0f/8.5f, 0, 1.0f/8.5f)),
 		glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(10.0f, 0.0f, -10.0f)), 
 		glm::vec3(6.5f, 10.0f, 0.1f))
 	);
 	scene_->AddEntity(front_wall1);
 	auto front_wall2 = std::make_shared<Entity>(
 		"meshes/cube.obj",
-		Material(glm::vec3(0.4f, 0.325f, 0.25f), 0.8f, 0.0f),
+		Material(glm::vec3(0.4f, 0.325f, 0.25f), 0.8f, 0.0f, 0.0f, 1.5f, 0.0f, 0.0f, TextureType(0, 1.0f/8.5f, 0.0f, 0.0f, 10.0f/8.5f, 0.0f, 1.0f/8.5f, 0, 1.0f/8.5f)),
 		glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(-10.0f, 0.0f, -10.0f)), 
 		glm::vec3(6.5f, 10.0f, 0.1f))
 	);
 	scene_->AddEntity(front_wall2);
 	auto front_wall3 = std::make_shared<Entity>(
 		"meshes/cube.obj",
-		Material(glm::vec3(0.4f, 0.325f, 0.25f), 0.8f, 0.0f),
+		Material(glm::vec3(0.4f, 0.325f, 0.25f), 0.8f, 0.0f, 0.0f, 1.5f, 0.0f, 0.0f, TextureType(0, 1.0f/8.5f, 0.0f, 0.0f, 10.0f/8.5f, 0.0f, 1.0f/8.5f, 0, 1.0f/8.5f)),
 		glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -10.0f)), 
 		glm::vec3(10.0f, 2.2f, 0.1f))
 	);
 	scene_->AddEntity(front_wall3);
 	auto front_wall4 = std::make_shared<Entity>(
 		"meshes/cube.obj",
-		Material(glm::vec3(0.4f, 0.325f, 0.25f), 0.8f, 0.0f),
+		Material(glm::vec3(0.4f, 0.325f, 0.25f), 0.8f, 0.0f, 0.0f, 1.5f, 0.0f, 0.0f, TextureType(0, 1.0f/8.5f, 0.0f, 0.0f, 10.0f/8.5f, 0.0f, 1.0f/8.5f, 0, 1.0f/8.5f)),
 		glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 7.5f, -10.0f)), 
 		glm::vec3(10.0f, 2.2f, 0.1f))
 	);
 	scene_->AddEntity(front_wall4);
 	auto pillar = std::make_shared<Entity>(
 		"meshes/cube.obj",
-		Material(glm::vec3(0.4f, 0.325f, 0.25f), 0.8f, 0.0f),
+		Material(glm::vec3(0.4f, 0.325f, 0.25f), 0.8f, 0.0f, 0.0f, 1.5f, 0.0f, 0.0f, TextureType(0, 1.0f/8.5f, 0.0f, 0.0f, 10.0f/8.5f, 0.0f, 1.0f/8.5f, 0, 1.0f/8.5f)),
 		glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -10.0f)), 
 		glm::vec3(0.6f, 10.0f, 0.1f))
 	);
@@ -319,7 +333,7 @@ void Application::OnInit() {
 	scene_->AddEntity(brown_table);
 	auto painting_frame = std::make_shared<Entity>(
 		"meshes/cube.obj",
-		Material(glm::vec3(0.4f, 0.325f, 0.25f), 0.8f, 0.0f),
+		Material(glm::vec3(0.4f, 0.325f, 0.25f), 0.8f, 0.0f, 0.0f, 1.5f, 0.0f, 0.0f, TextureType(6, 1.0f/2.0f, 0.0f, 0.0f, 8.0f/2.0f, 0.0f, -1.0f/2.0f, 0.0f, 4.5f/2.0f)),
 		glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(-7.0f, 3.5f, -9.9f)), 
 		glm::vec3(1.0f, 1.0f, 0.2f))
 	);

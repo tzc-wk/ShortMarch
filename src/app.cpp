@@ -427,6 +427,32 @@ void Application::OnInit() {
 	                       &texture_data_buffer_);
 	    texture_data_buffer_->UploadData(texture_data_buffer_content.data(), buffer_size);
 	}
+	
+	// Add lightings
+	
+	point_lights_.clear();
+	area_lights_.clear();
+
+	AddPointLight(PointLight(glm::vec3(0, 0.5, 0), glm::vec3(1.0f, 0.95f, 0.9f), 0.0f));
+	AddAreaLight(AreaLight(
+    	glm::vec3(0, 6.0f, -2.2f), 
+    	glm::normalize(glm::vec3(0, -1, 0)), 
+    	glm::normalize(glm::vec3(0, 0, 1)),
+    	2.0f, 2.0f, 
+    	glm::vec3(1.0f, 0.99f, 0.98f), 
+    	70.0f
+	));
+	
+	size_t point_lights_buffer_size = point_lights_.size() * sizeof(PointLight);
+	size_t area_lights_buffer_size = area_lights_.size() * sizeof(AreaLight);
+	core_->CreateBuffer(point_lights_buffer_size, 
+                   grassland::graphics::BUFFER_TYPE_DYNAMIC,
+                   &point_lights_buffer_);
+	core_->CreateBuffer(area_lights_buffer_size, 
+                   grassland::graphics::BUFFER_TYPE_DYNAMIC,
+                   &area_lights_buffer_);
+	point_lights_buffer_->UploadData(point_lights_.data(), point_lights_buffer_size);
+	area_lights_buffer_->UploadData(area_lights_.data(), area_lights_buffer_size);
 
     // Build acceleration structures
     scene_->BuildAccelerationStructures();
@@ -495,7 +521,9 @@ void Application::OnInit() {
     program_->AddResourceBinding(grassland::graphics::RESOURCE_TYPE_STORAGE_BUFFER, 1);
     program_->AddResourceBinding(grassland::graphics::RESOURCE_TYPE_STORAGE_BUFFER, 1);
     program_->AddResourceBinding(grassland::graphics::RESOURCE_TYPE_STORAGE_BUFFER, 1);
-    program_->AddResourceBinding(grassland::graphics::RESOURCE_TYPE_STORAGE_BUFFER, 1);  // space11 - texture data
+    program_->AddResourceBinding(grassland::graphics::RESOURCE_TYPE_STORAGE_BUFFER, 1);          // space11 - texture data
+	program_->AddResourceBinding(grassland::graphics::RESOURCE_TYPE_STORAGE_BUFFER, 1);          // space12 - point lights
+	program_->AddResourceBinding(grassland::graphics::RESOURCE_TYPE_STORAGE_BUFFER, 1);          // space13 - area lights
 	program_->Finalize();
 }
 
@@ -975,6 +1003,8 @@ void Application::OnRender() {
     if (texture_data_buffer_) {
     	command_context->CmdBindResources(11, { texture_data_buffer_.get() }, grassland::graphics::BIND_POINT_RAYTRACING);
 	}
+	command_context->CmdBindResources(12, { point_lights_buffer_.get() }, grassland::graphics::BIND_POINT_RAYTRACING);
+	command_context->CmdBindResources(13, { area_lights_buffer_.get() }, grassland::graphics::BIND_POINT_RAYTRACING);
 	command_context->CmdDispatchRays(window_->GetWidth(), window_->GetHeight(), 1);
     
     // When camera is disabled, increment sample count and use accumulated image

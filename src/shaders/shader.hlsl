@@ -39,6 +39,7 @@ float Random(inout uint seed) {
 ByteAddressBuffer texture_data_buffer : register(t0, space11);
 float3 GetTextureColor(uint texture_index, float2 uv, float lev = 0) {
     if (texture_index == 0) {
+        lev = clamp(lev, 0.0, 10.0);
         int mip = (int)lev;
         float frac = lev - (float)mip;
         mip = min(mip, 10);
@@ -113,7 +114,7 @@ float CalculateGroundMipLevel(float3 hit_point, float3 view_dir, float3 camera_p
     float texel_coverage = pixel_world_size * texels_per_world_unit;
     float mip_level = log2(texel_coverage);
     mip_level += 0.5;
-    return clamp(mip_level, 0.0, 10.0);
+    return mip_level;
 }
 
 // =====================================================================================================================================
@@ -207,23 +208,15 @@ struct AreaLight {
     float3 color;
     float intensity;
 };
-static const PointLight POINT_LIGHT = {
-    float3(0, 3, 0),
-    float3(1.0, 0.95, 0.9),
-    0
-};
-static const AreaLight AREA_LIGHT = {
-    float3(0, 6.0, -2.2),
-    normalize(float3(0, -1, 0)),
-    normalize(float3(0, 0, 1)),
-    2.0,
-    2.0,
-    float3(1.0, 0.99, 0.98),
-    70
-};
+
+StructuredBuffer<PointLight> point_lights : register(t0, space12);
+StructuredBuffer<AreaLight> area_lights : register(t0, space13);
+
 static const float3 AMBIENT_COLOR = float3(1.0, 1.0, 1.0);
 static const float AMBIENT_INTENSITY = 0.2;
 static const int AREA_LIGHT_SAMPLES = 1;
+static const int NUMBER_OF_POINT_LIGHTS = 1;
+static const int NUMBER_OF_AREA_LIGHTS = 1;
 
 bool RussianRoulette(float throughput, inout uint seed) {
     if (throughput < 0.05) {
@@ -316,8 +309,14 @@ float3 CalculateDirectLight(float3 hit_point, float3 normal, Material mat, float
     float3 total_light = float3(0, 0, 0);
     float3 ambient = AMBIENT_COLOR * AMBIENT_INTENSITY * mat.base_color;
     total_light += ambient;
-    total_light += CalculatePointLightContribution(hit_point, normal, mat, view_dir, POINT_LIGHT);
-    total_light += CalculateAreaLightContribution(hit_point, normal, mat, view_dir, AREA_LIGHT, seed);
+    for (uint i = 0; i < NUMBER_OF_POINT_LIGHTS; i++) {
+        PointLight light = point_lights[i];
+        total_light += CalculatePointLightContribution(hit_point, normal, mat, view_dir, light);
+    }
+    for (uint i = 0; i < NUMBER_OF_AREA_LIGHTS; i++) {
+        AreaLight light = area_lights[i];
+        total_light += CalculateAreaLightContribution(hit_point, normal, mat, view_dir, light, seed);
+    }
     return total_light;
 }
 
@@ -421,15 +420,15 @@ void ClosestHitMain(inout RayPayload payload, in BuiltInTriangleIntersectionAttr
     if (material_idx == 3 || material_idx == 4) {
         float3 camera_pos = WorldRayOrigin();
         float3 view_dir = normalize(-WorldRayDirection());
-        float ux = (hit_point.z + 10.0) / 7.5;
-        float uy = hit_point.y / 7.5;
+        float ux = (hit_point.z + 10.0) / 8.5;
+        float uy = (hit_point.y + 1) / 8.5;
         mat.base_color = GetTextureColor(5, float2(ux, uy));
     }
     if (material_idx == 5 || material_idx == 7 || material_idx == 8 || material_idx == 9 || material_idx == 10 || material_idx == 11) {
         float3 camera_pos = WorldRayOrigin();
         float3 view_dir = normalize(-WorldRayDirection());
-        float ux = (hit_point.x + 10.0) / 7.5;
-        float uy = hit_point.y / 7.5;
+        float ux = (hit_point.x + 10.0) / 8.5;
+        float uy = (hit_point.y + 1) / 8.5;
         mat.base_color = GetTextureColor(0, float2(ux, uy));
     }
     if (material_idx == 14) {

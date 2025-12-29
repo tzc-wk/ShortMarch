@@ -9,6 +9,33 @@ struct CameraObject {
     glm::mat4 camera_to_world;
 };
 
+struct PointLight {
+    glm::vec3 position;
+    glm::vec3 color;
+    float intensity;
+
+    PointLight() : position(0.0f), color(1.0f), intensity(1.0f) {}
+    PointLight(const glm::vec3& pos, const glm::vec3& col, float intens) 
+        : position(pos), color(col), intensity(intens) {}
+};
+
+struct AreaLight {
+    glm::vec3 center;
+    glm::vec3 normal;
+    glm::vec3 left;
+    float width;
+    float height;
+    glm::vec3 color;
+    float intensity;
+
+    AreaLight() : center(0.0f), normal(0.0f, 1.0f, 0.0f), left(1.0f, 0.0f, 0.0f), 
+                  width(1.0f), height(1.0f), color(1.0f), intensity(1.0f) {}
+    AreaLight(const glm::vec3& cen, const glm::vec3& norm, const glm::vec3& lft, 
+              float w, float h, const glm::vec3& col, float intens)
+        : center(cen), normal(norm), left(lft), width(w), height(h), 
+          color(col), intensity(intens) {}
+};
+
 class Application {
 public:
     Application(grassland::graphics::BackendAPI api = grassland::graphics::BACKEND_API_DEFAULT);
@@ -58,6 +85,14 @@ private:
     // Textures
     std::vector<std::unique_ptr<grassland::graphics::Image>> texture_images_;
     std::unique_ptr<grassland::graphics::Buffer> texture_data_buffer_;
+    
+    // Lightings
+    std::vector<PointLight> point_lights_;
+    std::vector<AreaLight> area_lights_;
+    std::unique_ptr<grassland::graphics::Buffer> point_lights_buffer_;
+    std::unique_ptr<grassland::graphics::Buffer> area_lights_buffer_;
+    void Application::AddPointLight(const PointLight& light) {point_lights_.push_back(light);}
+	void Application::AddAreaLight(const AreaLight& light) {area_lights_.push_back(light);}
 
     // Rendering
     std::unique_ptr<grassland::graphics::Image> color_image_;

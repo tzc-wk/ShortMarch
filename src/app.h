@@ -40,6 +40,7 @@ struct TextureInfo {
     uint32_t width;
     uint32_t height;
     uint32_t offset;
+    uint32_t mip_levels;
 };
 
 class Application {

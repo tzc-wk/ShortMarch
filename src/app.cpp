@@ -333,7 +333,7 @@ void Application::OnInit() {
 	auto sss_sculpture = std::make_shared<Entity>(
     	"meshes/happy.obj",
     	Material(glm::vec3(0.5f, 0.8f, 0.6f), 0.3f, 0.0f, 0.9f, 1.4f, 0.2f, 0.8f),
-    	glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(4.0f, -1.05f, -0.5f)), glm::vec3(20.0f, 20.0f, 20.0f))
+    	glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(2.75f, -1.05f, -0.5f)), glm::vec3(20.0f, 20.0f, 20.0f))
 	);
 	scene_->AddEntity(sss_sculpture);
 
@@ -348,6 +348,7 @@ void Application::OnInit() {
 	    "textures/texture6.png",
 	    "textures/texture7.png"
 	};
+	std::vector<int> mip_levels = {10, 0, 0, 0, 0, 0, 0};
 	std::vector<float> texture_data_buffer_content;
 	
 	for (int tex_idx = 0; tex_idx < texture_paths.size(); ++tex_idx) {
@@ -358,75 +359,65 @@ void Application::OnInit() {
 	    unsigned char* data = stbi_load(full_path.c_str(), &width, &height, &channels, 4);
 	    
 	    if (data) {
-		    if (tex_idx == 0) {
-		        TextureInfo info;
-		        info.width = width;
-		        info.height = height;
-		        info.offset = (uint32_t)(texture_data_buffer_content.size() / 4);
-		        texture_infos_.push_back(info);
-		        int current_width = width;
-	            int current_height = height;
-	            unsigned char* current_data = data;
-		        
-		        for (int mip = 0; mip <= 10; ++mip) {
-		            for (int i = 0; i < current_width * current_height; ++i) {
-		                int x = i % current_width;
-		                int y = i / current_width;
-		                int base_idx = (y * current_width + x) * 4;
-		                
-		                float r = current_data[base_idx] / 255.0f;
-		                float g = current_data[base_idx + 1] / 255.0f;
-		                float b = current_data[base_idx + 2] / 255.0f;
-		                float a = current_data[base_idx + 3] / 255.0f;
-		                
-		                texture_data_buffer_content.push_back(r);
-		                texture_data_buffer_content.push_back(g);
-		                texture_data_buffer_content.push_back(b);
-		                texture_data_buffer_content.push_back(a);
-		            }
-		            
-		            if (current_width > 1 && current_height > 1) {
-		                int next_width = current_width / 2;
-		                int next_height = current_height / 2;
-		                unsigned char* next_data = new unsigned char[next_width * next_height * 4];
-		                
-		                for (int y = 0; y < next_height; ++y) {
-		                    for (int x = 0; x < next_width; ++x) {
-		                        for (int c = 0; c < 4; ++c) {
-		                            float sum = 0.0f;
-		                            sum += current_data[((y*2) * current_width + (x*2)) * 4 + c];
-		                            sum += current_data[((y*2) * current_width + (x*2+1)) * 4 + c];
-		                            sum += current_data[((y*2+1) * current_width + (x*2)) * 4 + c];
-		                            sum += current_data[((y*2+1) * current_width + (x*2+1)) * 4 + c];
-		                            next_data[(y * next_width + x) * 4 + c] = (unsigned char)(sum / 4.0f);
-		                        }
-		                    }
-		                }
-		                
-		                if (mip > 0) delete[] current_data;
-		                current_data = next_data;
-		                current_width = next_width;
-		                current_height = next_height;
-		            }
-		        }
-		        delete[] data;
-		    } else {
-		        TextureInfo info;
-		        info.width = width;
-		        info.height = height;
-		        info.offset = (uint32_t)(texture_data_buffer_content.size() / 4);
-		        texture_infos_.push_back(info);
-		        
-		        for (size_t i = 0; i < width * height * 4; i += 4) {
-		            texture_data_buffer_content.push_back(data[i] / 255.0f);
-		            texture_data_buffer_content.push_back(data[i + 1] / 255.0f);
-		            texture_data_buffer_content.push_back(data[i + 2] / 255.0f);
-		            texture_data_buffer_content.push_back(data[i + 3] / 255.0f);
-		        }
-		        stbi_image_free(data);
-		    }
-		    grassland::LogInfo("Successfully loaded texture from: {}", full_path);
-		} else grassland::LogInfo("Failed to load texture from: {}", full_path);
+	        TextureInfo info;
+	        info.width = width;
+	        info.height = height;
+	        info.offset = (uint32_t)(texture_data_buffer_content.size() / 4);
+	        info.mip_levels = mip_levels[tex_idx];
+	        texture_infos_.push_back(info);
+	        
+	        int current_width = width;
+	        int current_height = height;
+	        unsigned char* current_data = data;
+	        int max_mip = mip_levels[tex_idx];
+	        
+	        for (int mip = 0; mip <= max_mip; ++mip) {
+	            for (int i = 0; i < current_width * current_height; ++i) {
+	                int x = i % current_width;
+	                int y = i / current_width;
+	                int base_idx = (y * current_width + x) * 4;
+	                
+	                float r = current_data[base_idx] / 255.0f;
+	                float g = current_data[base_idx + 1] / 255.0f;
+	                float b = current_data[base_idx + 2] / 255.0f;
+	                float a = current_data[base_idx + 3] / 255.0f;
+	                
+	                texture_data_buffer_content.push_back(r);
+	                texture_data_buffer_content.push_back(g);
+	                texture_data_buffer_content.push_back(b);
+	                texture_data_buffer_content.push_back(a);
+	            }
+	            
+	            if (mip < max_mip && current_width > 1 && current_height > 1) {
+	                int next_width = current_width / 2;
+	                int next_height = current_height / 2;
+	                unsigned char* next_data = new unsigned char[next_width * next_height * 4];
+	                
+	                for (int y = 0; y < next_height; ++y) {
+	                    for (int x = 0; x < next_width; ++x) {
+	                        for (int c = 0; c < 4; ++c) {
+	                            float sum = 0.0f;
+	                            sum += current_data[((y*2) * current_width + (x*2)) * 4 + c];
+	                            sum += current_data[((y*2) * current_width + (x*2+1)) * 4 + c];
+	                            sum += current_data[((y*2+1) * current_width + (x*2)) * 4 + c];
+	                            sum += current_data[((y*2+1) * current_width + (x*2+1)) * 4 + c];
+	                            next_data[(y * next_width + x) * 4 + c] = (unsigned char)(sum / 4.0f);
+	                        }
+	                    }
+	                }
+	                
+	                if (mip > 0) delete[] current_data;
+	                current_data = next_data;
+	                current_width = next_width;
+	                current_height = next_height;
+	            }
+	        }
+	        
+	        if (max_mip > 0) delete[] current_data;
+	        else stbi_image_free(data);
+	        
+	        grassland::LogInfo("Successfully loaded texture from: {}", full_path);
+	    } else grassland::LogInfo("Failed to load texture from: {}", full_path);
 	}
 	
 	size_t buffer_size = texture_data_buffer_content.size() * sizeof(float);

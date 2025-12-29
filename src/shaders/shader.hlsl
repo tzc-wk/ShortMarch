@@ -42,70 +42,58 @@ struct TextureInfo {
     uint width;
     uint height;
     uint offset;
+    uint mip_levels;
 };
 
 StructuredBuffer<TextureInfo> texture_infos : register(t0, space14);
 
 float3 GetTextureColor(uint texture_index, float2 uv, float lev = 0) {
     TextureInfo info = texture_infos[texture_index];
-    if (texture_index == 0) {
-        lev = clamp(lev, 0.0, 10.0);
-        int mip = (int)lev;
-        float frac = lev - (float)mip;
-        mip = min(mip, 10);
-        int next_mip = min(mip + 1, 10);
-        uint base_offset = 0;
-        uint mip_offset = 0;
-        uint mip_width = 1024;
-        uint mip_height = 1024;
-        for (int i = 0; i < mip; ++i) {
-            mip_offset += mip_width * mip_height;
-            mip_width = mip_width / 2;
-            mip_height = mip_height / 2;
-        }
-        uint next_mip_offset = mip_offset + mip_width * mip_height;
-        uint next_mip_width = mip_width / 2;
-        uint next_mip_height = mip_height / 2;
-        if (next_mip == mip) {
-            next_mip_width = mip_width;
-            next_mip_height = mip_height;
-            next_mip_offset = mip_offset;
-        }
-        uint offset = base_offset + mip_offset;
-        uint width = mip_width;
-        uint height = mip_height;
-        uint x = uint(uv.x * width) % width;
-        uint y = uint(uv.y * height) % height;
-        uint pixel_index = offset + y * width + x;
-        uint byte_offset = pixel_index * 4 * 4;
-        float r0 = asfloat(texture_data_buffer.Load(byte_offset));
-        float g0 = asfloat(texture_data_buffer.Load(byte_offset + 4));
-        float b0 = asfloat(texture_data_buffer.Load(byte_offset + 8));
-        offset = base_offset + next_mip_offset;
-        width = next_mip_width;
-        height = next_mip_height;
-        x = uint(uv.x * width) % width;
-        y = uint(uv.y * height) % height;
-        pixel_index = offset + y * width + x;
-        byte_offset = pixel_index * 4 * 4;
-        float r1 = asfloat(texture_data_buffer.Load(byte_offset));
-        float g1 = asfloat(texture_data_buffer.Load(byte_offset + 4));
-        float b1 = asfloat(texture_data_buffer.Load(byte_offset + 8));
-        float r = lerp(r0, r1, frac);
-        float g = lerp(g0, g1, frac);
-        float b = lerp(b0, b1, frac);
-        return float3(r, g, b);
+    lev = clamp(lev, 0.0, (float)info.mip_levels);
+    int mip = (int)lev;
+    float frac = lev - (float)mip;
+    mip = min(mip, info.mip_levels);
+    int next_mip = min(mip + 1, info.mip_levels);
+    uint base_offset = info.offset;
+    uint mip_offset = 0;
+    uint mip_width = info.width;
+    uint mip_height = info.height;
+    for (int i = 0; i < mip; ++i) {
+        mip_offset += mip_width * mip_height;
+        mip_width = mip_width / 2;
+        mip_height = mip_height / 2;
     }
-    uint width = info.width;
-    uint height = info.height;
-    uint offset = info.offset;
+    uint next_mip_offset = mip_offset + mip_width * mip_height;
+    uint next_mip_width = mip_width / 2;
+    uint next_mip_height = mip_height / 2;
+    if (next_mip == mip) {
+        next_mip_width = mip_width;
+        next_mip_height = mip_height;
+        next_mip_offset = mip_offset;
+    }
+    uint offset = base_offset + mip_offset;
+    uint width = mip_width;
+    uint height = mip_height;
     uint x = uint(uv.x * width) % width;
     uint y = uint(uv.y * height) % height;
     uint pixel_index = offset + y * width + x;
     uint byte_offset = pixel_index * 4 * 4;
-    float r = asfloat(texture_data_buffer.Load(byte_offset));
-    float g = asfloat(texture_data_buffer.Load(byte_offset + 4));
-    float b = asfloat(texture_data_buffer.Load(byte_offset + 8));
+    float r0 = asfloat(texture_data_buffer.Load(byte_offset));
+    float g0 = asfloat(texture_data_buffer.Load(byte_offset + 4));
+    float b0 = asfloat(texture_data_buffer.Load(byte_offset + 8));
+    offset = base_offset + next_mip_offset;
+    width = next_mip_width;
+    height = next_mip_height;
+    x = uint(uv.x * width) % width;
+    y = uint(uv.y * height) % height;
+    pixel_index = offset + y * width + x;
+    byte_offset = pixel_index * 4 * 4;
+    float r1 = asfloat(texture_data_buffer.Load(byte_offset));
+    float g1 = asfloat(texture_data_buffer.Load(byte_offset + 4));
+    float b1 = asfloat(texture_data_buffer.Load(byte_offset + 8));
+    float r = lerp(r0, r1, frac);
+    float g = lerp(g0, g1, frac);
+    float b = lerp(b0, b1, frac);
     return float3(r, g, b);
 }
 float CalculateGroundMipLevel(float3 hit_point, float3 view_dir, float3 camera_pos) {

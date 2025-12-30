@@ -353,8 +353,8 @@ void Application::OnInit() {
 	auto red_apple = std::make_shared<Entity>(
     	"meshes/appleuvw.obj",
     	Material(glm::vec3(0.9f, 0.05f, 0.0f), 0.8f, 0.0f),
-    	glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(-1.5f, 4.0f, 0.0f)), glm::vec3(0.006f, 0.006f, 0.006f)),
-    	glm::vec3(0.0f, -1000.0f, 0.0f)
+    	glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(-2.5f, 0.7f, -1.5f)), glm::vec3(0.006f, 0.006f, 0.006f)),
+    	glm::vec3(0.0f, -100.0f, 0.0f)
 	);
 	scene_->AddEntity(red_apple);
 	auto lampshade1 = std::make_shared<Entity>(
@@ -469,6 +469,14 @@ void Application::OnInit() {
 		glm::vec3(0.1f, 1.0f, 1.0f))
 	);
 	scene_->AddEntity(lampshade16);
+	auto basket = std::make_shared<Entity>(
+		"meshes/basket.obj",
+		Material(glm::vec3(0.5f, 0.25f, 0.0f), 0.9f, 0.0f),
+		glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(-2.5f, -1.0f, -1.0f)), 
+		glm::vec3(0.006f, 0.006f, 0.006f))
+	);
+	scene_->AddEntity(basket);
+	
 	// Load textures
 
 	std::vector<std::string> texture_paths = {

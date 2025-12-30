@@ -46,6 +46,7 @@ struct Material {
     float mean_free_path;
     float anisotropy_g;
     TextureType texture_info;
+    float shadow_factor;
     
     Material() {
         base_color = glm::vec3(0.8f, 0.8f, 0.8f);
@@ -56,12 +57,13 @@ struct Material {
         mean_free_path = 0.0f;
         anisotropy_g = 0.0f;
         texture_info = TextureType();
+        shadow_factor = 0.0f;
     }
     
     Material(const glm::vec3& _base_color, float _roughness = 0.5f, float _metallic = 0.0f, 
              float _transmission = 0.0f, float _ior = 1.5f,
              float _mean_free_path = 0.0f, float _anisotropy_g = 0.0f,
-             const TextureType& _texture = TextureType()) {
+             const TextureType& _texture = TextureType(), float _shadow_factor = 0.0f) {
         base_color = _base_color;
         roughness = _roughness;
         metallic = _metallic;
@@ -70,5 +72,6 @@ struct Material {
         mean_free_path = _mean_free_path;
         anisotropy_g = _anisotropy_g;
         texture_info = _texture;
+        shadow_factor = _shadow_factor;
     }
 };

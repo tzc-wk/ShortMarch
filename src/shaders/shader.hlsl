@@ -29,6 +29,7 @@ struct Material {
     float mean_free_path;
     float anisotropy_g;
     TextureType texture_info;
+    float shadow_factor;
 };
 struct HoverInfo {
     int hovered_entity_id;
@@ -261,8 +262,8 @@ float TestShadow(float3 hit_point, float3 light_pos) {
         if (!shadow_payload.hit) break;
         if (shadow_payload.instance_id != 0xFFFFFFFF) {
             Material hit_mat = materials[shadow_payload.instance_id];
-            if (hit_mat.transmission > 0.0) {
-                transmission_factor *= hit_mat.transmission;
+            if (hit_mat.shadow_factor > 0.0) {
+                transmission_factor *= hit_mat.shadow_factor;
                 ray_origin = ray_origin + light_dir * (shadow_payload.hit_distance + 0.001);
                 current_distance += shadow_payload.hit_distance + 0.001;
                 continue;

@@ -357,7 +357,118 @@ void Application::OnInit() {
     	glm::vec3(0.0f, -1000.0f, 0.0f)
 	);
 	scene_->AddEntity(red_apple);
-
+	auto lampshade1 = std::make_shared<Entity>(
+		"meshes/cube.obj",
+		Material(glm::vec3(0.8f, 0.8f, 0.8f), 0.3f, 0.7f),
+		glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 7.5f, -0.7f)), 
+		glm::vec3(1.5f, 1.0f, 0.1f))
+	);
+	scene_->AddEntity(lampshade1);
+	auto lampshade2 = std::make_shared<Entity>(
+		"meshes/cube.obj",
+		Material(glm::vec3(0.8f, 0.8f, 0.8f), 0.3f, 0.7f),
+		glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 7.5f, -3.7f)), 
+		glm::vec3(1.5f, 1.0f, 0.1f))
+	);
+	scene_->AddEntity(lampshade2);
+	auto lampshade3 = std::make_shared<Entity>(
+		"meshes/cube.obj",
+		Material(glm::vec3(0.8f, 0.8f, 0.8f), 0.3f, 0.7f),
+		glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(1.5f, 7.5f, -2.2f)), 
+		glm::vec3(0.1f, 1.0f, 1.5f))
+	);
+	scene_->AddEntity(lampshade3);
+	auto lampshade4 = std::make_shared<Entity>(
+		"meshes/cube.obj",
+		Material(glm::vec3(0.8f, 0.8f, 0.8f), 0.3f, 0.7f),
+		glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(-1.5f, 7.5f, -2.2f)), 
+		glm::vec3(0.1f, 1.0f, 1.5f))
+	);
+	scene_->AddEntity(lampshade4);
+	auto lampshade5 = std::make_shared<Entity>(
+		"meshes/cube.obj",
+		Material(glm::vec3(0.8f, 0.8f, 0.8f), 0.3f, 0.7f),
+		glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(-8.0f, 7.5f, -7.0f)), 
+		glm::vec3(1.0f, 1.0f, 0.1f))
+	);
+	scene_->AddEntity(lampshade5);
+	auto lampshade6 = std::make_shared<Entity>(
+		"meshes/cube.obj",
+		Material(glm::vec3(0.8f, 0.8f, 0.8f), 0.3f, 0.7f),
+		glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(-8.0f, 7.5f, -9.0f)), 
+		glm::vec3(1.0f, 1.0f, 0.1f))
+	);
+	scene_->AddEntity(lampshade6);
+	auto lampshade7 = std::make_shared<Entity>(
+		"meshes/cube.obj",
+		Material(glm::vec3(0.8f, 0.8f, 0.8f), 0.3f, 0.7f),
+		glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(-7.0f, 7.5f, -8.0f)), 
+		glm::vec3(0.1f, 1.0f, 1.0f))
+	);
+	scene_->AddEntity(lampshade7);
+	auto lampshade8 = std::make_shared<Entity>(
+		"meshes/cube.obj",
+		Material(glm::vec3(0.8f, 0.8f, 0.8f), 0.3f, 0.7f),
+		glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(-9.0f, 7.5f, -8.0f)), 
+		glm::vec3(0.1f, 1.0f, 1.0f))
+	);
+	scene_->AddEntity(lampshade8);
+	auto lampshade9 = std::make_shared<Entity>(
+		"meshes/cube.obj",
+		Material(glm::vec3(0.8f, 0.8f, 0.8f), 0.3f, 0.7f),
+		glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(8.0f, 7.5f, -7.0f)), 
+		glm::vec3(1.0f, 1.0f, 0.1f))
+	);
+	scene_->AddEntity(lampshade9);
+	auto lampshade10 = std::make_shared<Entity>(
+		"meshes/cube.obj",
+		Material(glm::vec3(0.8f, 0.8f, 0.8f), 0.3f, 0.7f),
+		glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(8.0f, 7.5f, -9.0f)), 
+		glm::vec3(1.0f, 1.0f, 0.1f))
+	);
+	scene_->AddEntity(lampshade10);
+	auto lampshade11 = std::make_shared<Entity>(
+		"meshes/cube.obj",
+		Material(glm::vec3(0.8f, 0.8f, 0.8f), 0.3f, 0.7f),
+		glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(7.0f, 7.5f, -8.0f)), 
+		glm::vec3(0.1f, 1.0f, 1.0f))
+	);
+	scene_->AddEntity(lampshade11);
+	auto lampshade12 = std::make_shared<Entity>(
+		"meshes/cube.obj",
+		Material(glm::vec3(0.8f, 0.8f, 0.8f), 0.3f, 0.7f),
+		glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(9.0f, 7.5f, -8.0f)), 
+		glm::vec3(0.1f, 1.0f, 1.0f))
+	);
+	scene_->AddEntity(lampshade12);
+	auto lampshade13 = std::make_shared<Entity>(
+		"meshes/cube.obj",
+		Material(glm::vec3(0.8f, 0.8f, 0.8f), 0.3f, 0.7f),
+		glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 7.5f, -7.0f)), 
+		glm::vec3(1.0f, 1.0f, 0.1f))
+	);
+	scene_->AddEntity(lampshade13);
+	auto lampshade14 = std::make_shared<Entity>(
+		"meshes/cube.obj",
+		Material(glm::vec3(0.8f, 0.8f, 0.8f), 0.3f, 0.7f),
+		glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 7.5f, -9.0f)), 
+		glm::vec3(1.0f, 1.0f, 0.1f))
+	);
+	scene_->AddEntity(lampshade14);
+	auto lampshade15 = std::make_shared<Entity>(
+		"meshes/cube.obj",
+		Material(glm::vec3(0.8f, 0.8f, 0.8f), 0.3f, 0.7f),
+		glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(-1.0f, 7.5f, -8.0f)), 
+		glm::vec3(0.1f, 1.0f, 1.0f))
+	);
+	scene_->AddEntity(lampshade15);
+	auto lampshade16 = std::make_shared<Entity>(
+		"meshes/cube.obj",
+		Material(glm::vec3(0.8f, 0.8f, 0.8f), 0.3f, 0.7f),
+		glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(1.0f, 7.5f, -8.0f)), 
+		glm::vec3(0.1f, 1.0f, 1.0f))
+	);
+	scene_->AddEntity(lampshade16);
 	// Load textures
 
 	std::vector<std::string> texture_paths = {
@@ -462,25 +573,33 @@ void Application::OnInit() {
     	glm::vec3(0, 7.0f, -2.2f), 
     	glm::normalize(glm::vec3(0, -1, 0)), 
     	glm::normalize(glm::vec3(0, 0, 1)),
-    	2.0f, 2.0f, 
+    	3.0f, 3.0f, 
     	glm::vec3(1.0f, 0.99f, 0.98f), 
-    	70.0f
+    	100.0f
 	));
 	AddAreaLight(AreaLight(
     	glm::vec3(-8.0f, 7.0f, -8.0f), 
     	glm::normalize(glm::vec3(0, -1, 0)), 
     	glm::normalize(glm::vec3(0, 0, 1)),
-    	1.0f, 1.0f, 
+    	2.0f, 2.0f, 
     	glm::vec3(1.0f, 0.0f, 0.0f), 
-    	10.0f
+    	50.0f
+	));
+	AddAreaLight(AreaLight(
+    	glm::vec3(0.0f, 7.0f, -8.0f), 
+    	glm::normalize(glm::vec3(0, -1, 0)), 
+    	glm::normalize(glm::vec3(0, 0, 1)),
+    	2.0f, 2.0f, 
+    	glm::vec3(0.0f, 1.0f, 0.0f), 
+    	50.0f
 	));
 	AddAreaLight(AreaLight(
     	glm::vec3(8.0f, 7.0f, -8.0f), 
     	glm::normalize(glm::vec3(0, -1, 0)), 
     	glm::normalize(glm::vec3(0, 0, 1)),
-    	1.0f, 1.0f, 
-    	glm::vec3(0.0f, 1.0f, 0.0f), 
-    	10.0f
+    	2.0f, 2.0f, 
+    	glm::vec3(0.0f, 0.0f, 1.0f), 
+    	50.0f
 	));
 	
 	size_t point_lights_buffer_size = point_lights_.size() * sizeof(PointLight);

@@ -222,7 +222,7 @@ static const float3 AMBIENT_COLOR = float3(1.0, 1.0, 1.0);
 static const float AMBIENT_INTENSITY = 0.2;
 static const int AREA_LIGHT_SAMPLES = 1;
 static const int NUMBER_OF_POINT_LIGHTS = 1;
-static const int NUMBER_OF_AREA_LIGHTS = 3;
+static const int NUMBER_OF_AREA_LIGHTS = 4;
 
 bool RussianRoulette(float throughput, inout uint seed) {
     if (throughput < 0.05) {

@@ -590,7 +590,7 @@ void Application::OnInit() {
     	glm::normalize(glm::vec3(0, -1, 0)), 
     	glm::normalize(glm::vec3(0, 0, 1)),
     	2.0f, 2.0f, 
-    	glm::vec3(1.0f, 0.0f, 0.0f), 
+    	glm::vec3(1.0f, 0.7f, 0.7f), 
     	50.0f
 	));
 	AddAreaLight(AreaLight(
@@ -598,7 +598,7 @@ void Application::OnInit() {
     	glm::normalize(glm::vec3(0, -1, 0)), 
     	glm::normalize(glm::vec3(0, 0, 1)),
     	2.0f, 2.0f, 
-    	glm::vec3(0.0f, 1.0f, 0.0f), 
+    	glm::vec3(0.7f, 1.0f, 0.7f), 
     	50.0f
 	));
 	AddAreaLight(AreaLight(
@@ -606,7 +606,7 @@ void Application::OnInit() {
     	glm::normalize(glm::vec3(0, -1, 0)), 
     	glm::normalize(glm::vec3(0, 0, 1)),
     	2.0f, 2.0f, 
-    	glm::vec3(0.0f, 0.0f, 1.0f), 
+    	glm::vec3(0.7f, 0.7f, 1.0f), 
     	50.0f
 	));
 	

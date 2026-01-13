@@ -46,6 +46,9 @@ struct HoverInfo {
     int hovered_entity_id;
 };
 
+#define MAX_DEPTH 7
+#define PI 3.14159265358979323846
+
 RaytracingAccelerationStructure as : register(t0, space0);
 RWTexture2D<float4> output : register(u0, space1);
 ConstantBuffer<CameraInfo> camera_info : register(b0, space2);
@@ -407,6 +410,163 @@ float3 CalculateAreaLightContribution(float3 hit_point, float3 normal, Material 
     }
     return total_contribution;
 }
+float3 SampleRandomDirection(float3 normal, float roughness, inout uint seed) {
+    float u1 = Random(seed);
+    float u2 = Random(seed);
+    
+    float phi = 2.0 * PI * u1;
+    float cosTheta = pow(u2, 1.0 / (roughness + 0.05));
+    float sinTheta = sqrt(1.0 - cosTheta * cosTheta);
+    
+    float3 tangent, bitangent;
+    if (abs(normal.x) > abs(normal.y)) {
+        tangent = normalize(cross(float3(0, 1, 0), normal));
+    } else {
+        tangent = normalize(cross(float3(1, 0, 0), normal));
+    }
+    bitangent = cross(normal, tangent);
+    
+    float3 localDir = float3(sinTheta * cos(phi), sinTheta * sin(phi), cosTheta);
+    return localDir.x * tangent + localDir.y * bitangent + localDir.z * normal;
+}
+
+float pdfRandomDirection(float3 dir, float3 normal, float roughness) {
+    float cosTheta = dot(dir, normal);
+    if (cosTheta <= 0.0) return 0.0;
+    return cosTheta / PI;
+}
+
+float3 CalculateBRDFDirectLight(float3 hit_point, float3 normal, Material mat, float3 view_dir, inout uint seed) {
+    float3 total_light = float3(0, 0, 0);
+    
+    float3 random_dir = SampleRandomDirection(normal, mat.roughness, seed);
+    
+    RayDesc test_ray;
+    test_ray.Origin = hit_point + normal * 0.001;
+    test_ray.Direction = random_dir;
+    test_ray.TMin = 0.001;
+    test_ray.TMax = 10000.0;
+    
+    RayPayload test_payload;
+    test_payload.color = float3(0, 0, 0);
+    test_payload.hit = false;
+    test_payload.instance_id = 0xFFFFFFFF;
+    test_payload.hit_distance = 10000.0;
+    test_payload.depth = 100;
+    test_payload.throughput = 0.0;
+    test_payload.inside_material = false;
+    
+    TraceRay(as, RAY_FLAG_NONE, 0xFF, 0, 1, 0, test_ray, test_payload);
+    
+    if (test_payload.hit) {
+        return total_light;
+    }
+    
+    for (uint i = 0; i < NUMBER_OF_AREA_LIGHTS; i++) {
+        AreaLight light = area_lights[i];
+        
+        float3 light_normal = light.normal;
+        float denom = dot(random_dir, light_normal);
+        if (abs(denom) < 1e-6) continue;
+        
+        float3 to_plane = light.center - hit_point;
+        float t = dot(to_plane, light_normal) / denom;
+        if (t <= 0.001) continue;
+        
+        float3 plane_hit = hit_point + random_dir * t;
+        float3 local_pos = plane_hit - light.center;
+        
+        float3 light_up = normalize(cross(light.normal, light.left));
+        float proj_up = dot(local_pos, light_up);
+        float proj_left = dot(local_pos, light.left);
+        
+        if (abs(proj_up) <= light.height * 0.5 && abs(proj_left) <= light.width * 0.5) {
+            float3 light_sample = plane_hit;
+            float3 to_light = light_sample - hit_point;
+            float distance = length(to_light);
+            float3 light_dir = normalize(to_light);
+            
+            float ndotl = max(0.0, dot(normal, light_dir));
+            if (ndotl <= 0.0) continue;
+            
+            RayDesc shadow_ray;
+            shadow_ray.Origin = hit_point + normal * 0.001;
+            shadow_ray.Direction = light_dir;
+            shadow_ray.TMin = 0.001;
+            shadow_ray.TMax = distance - 0.002;
+            
+            RayPayload shadow_payload;
+            shadow_payload.color = float3(0, 0, 0);
+            shadow_payload.hit = false;
+            shadow_payload.instance_id = 0xFFFFFFFF;
+            shadow_payload.hit_distance = 10000.0;
+            shadow_payload.depth = 100;
+            shadow_payload.throughput = 0.0;
+            shadow_payload.inside_material = false;
+            
+            TraceRay(as, RAY_FLAG_FORCE_OPAQUE | RAY_FLAG_ACCEPT_FIRST_HIT_AND_END_SEARCH, 
+                     0xFF, 0, 0, 0, shadow_ray, shadow_payload);
+            
+            if (shadow_payload.hit) continue;
+            
+            float attenuation = light.intensity / (distance * distance + 0.001);
+            float diffuse_factor = 1.0 - mat.metallic;
+            float3 diffuse = attenuation * light.color * mat.base_color * ndotl * diffuse_factor;
+            
+            float3 half_vector = normalize(light_dir + view_dir);
+            float ndoth = max(0.0, dot(normal, half_vector));
+            float specular_power = max(1.0, 32.0 * (1.0 - mat.roughness));
+            float specular_intensity = pow(ndoth, specular_power);
+            float metallic_factor = 0.2 + mat.metallic * 0.8;
+            float3 specular = attenuation * light.color * mat.base_color * specular_intensity * metallic_factor;
+            
+            float3 contribution = diffuse + specular;
+            float pdf_brdf = pdfRandomDirection(light_dir, normal, mat.roughness);
+            
+            if (pdf_brdf > 1e-6) {
+                total_light += contribution / pdf_brdf;
+            }
+        }
+    }
+    
+    for (uint i = 0; i < NUMBER_OF_POINT_LIGHTS; i++) {
+        PointLight light = point_lights[i];
+        float3 light_dir = normalize(light.position - hit_point);
+        
+        float dot_dir = dot(random_dir, light_dir);
+        float light_radius = 0.1;
+        float distance = length(light.position - hit_point);
+        float angular_threshold = light_radius / distance;
+        
+        if (dot_dir < (1.0 - angular_threshold * angular_threshold * 0.5)) continue;
+        
+        float ndotl = max(0.0, dot(normal, light_dir));
+        if (ndotl <= 0.0) continue;
+        
+        float shadow_factor = TestShadow(hit_point, light.position);
+        if (shadow_factor <= 0.001) continue;
+        
+        float attenuation = light.intensity / (distance * distance + 0.001);
+        float diffuse_factor = 1.0 - mat.metallic;
+        float3 diffuse = attenuation * light.color * mat.base_color * ndotl * diffuse_factor * shadow_factor;
+        
+        float3 half_vector = normalize(light_dir + view_dir);
+        float ndoth = max(0.0, dot(normal, half_vector));
+        float specular_power = max(1.0, 32.0 * (1.0 - mat.roughness));
+        float specular_intensity = pow(ndoth, specular_power);
+        float metallic_factor = 0.2 + mat.metallic * 0.8;
+        float3 specular = attenuation * light.color * mat.base_color * specular_intensity * metallic_factor * shadow_factor;
+        
+        float3 contribution = diffuse + specular;
+        float pdf_brdf = pdfRandomDirection(light_dir, normal, mat.roughness);
+        
+        if (pdf_brdf > 1e-6) {
+            total_light += contribution / pdf_brdf;
+        }
+    }
+    
+    return total_light;
+}
 float3 CalculateDirectLight(float3 hit_point, float3 normal, Material mat, float3 view_dir, inout uint seed) {
     float3 total_light = float3(0, 0, 0);
     float3 ambient = AMBIENT_COLOR * AMBIENT_INTENSITY * mat.base_color;
@@ -419,15 +579,14 @@ float3 CalculateDirectLight(float3 hit_point, float3 normal, Material mat, float
         AreaLight light = area_lights[i];
         total_light += CalculateAreaLightContribution(hit_point, normal, mat, view_dir, light, seed);
     }
+    float3 brdf_light = CalculateBRDFDirectLight(hit_point, normal, mat, view_dir, seed);
+    total_light += brdf_light;
     return total_light;
 }
 
 // =====================================================================================================================================
 // ================================================== raytracing related ===============================================================
 // =====================================================================================================================================
-
-#define MAX_DEPTH 7
-#define PI 3.14159265358979323846
 
 [shader("raygeneration")]
 void RayGenMain() {

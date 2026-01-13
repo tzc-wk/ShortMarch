@@ -31,6 +31,17 @@ struct Material {
     TextureType texture_info;
     float shadow_factor;
 };
+
+struct RayPayload {
+    float3 color;
+    bool hit;
+    uint instance_id;
+    float hit_distance;
+    uint depth;
+    float throughput;
+    bool inside_material;
+};
+
 struct HoverInfo {
     int hovered_entity_id;
 };
@@ -123,20 +134,112 @@ float2 GetTextureCoords(float3 position, TextureType tex_info) {
               tex_info.c7 * position.z + tex_info.c8;
     return float2(u, v);
 }
-float CalculateGroundMipLevel(float3 hit_point, float3 view_dir, float3 camera_pos) {
-    const float GROUND_SIZE = 20.0;
-    const float TEXTURE_SIZE = 1024.0;
-    const float PIXEL_ANGLE = 0.0007;
-    float ray_length = length(hit_point - camera_pos);
-    float cos_theta = abs(dot(float3(0,1,0), -view_dir));
-    cos_theta = max(cos_theta, 0.001);
-    float pixel_world_size = ray_length * PIXEL_ANGLE / cos_theta;
-    float texels_per_world_unit = TEXTURE_SIZE / GROUND_SIZE;
-    float texel_coverage = pixel_world_size * texels_per_world_unit;
-    float mip_level = log2(texel_coverage);
-    mip_level += 0.5;
-    return mip_level;
+float2 CalculateTextureDerivatives(float3 hit_point, TextureType tex_info, float3 camera_pos, float3 ray_dir, float2 screen_uv) {
+    float epsilon = 0.001;
+    
+    float2 d = (screen_uv + float2(epsilon, 0.0)) * 2.0 - 1.0;
+    float4 target_x = mul(camera_info.screen_to_camera, float4(d, 1, 1));
+    float4 direction_x = mul(camera_info.camera_to_world, float4(target_x.xyz, 0));
+    
+    RayDesc ray_x;
+    ray_x.Origin = camera_pos;
+    ray_x.Direction = normalize(direction_x.xyz);
+    ray_x.TMin = 0.001;
+    ray_x.TMax = 10000.0;
+    
+    RayPayload payload_x;
+    payload_x.color = float3(0,0,0);
+    payload_x.hit = false;
+    payload_x.instance_id = 0xFFFFFFFF;
+    payload_x.hit_distance = 10000.0;
+    payload_x.depth = 100;
+    payload_x.throughput = 0.0;
+    payload_x.inside_material = false;
+    TraceRay(as, RAY_FLAG_NONE, 0xFF, 0, 1, 0, ray_x, payload_x);
+    
+    float2 uv_center = GetTextureCoords(hit_point, tex_info);
+    float2 ddx = float2(0.0, 0.0);
+    
+    if (payload_x.hit && payload_x.instance_id == InstanceID()) {
+        float3 hit_x = camera_pos + ray_x.Direction * payload_x.hit_distance;
+        float2 uv_x = GetTextureCoords(hit_x, tex_info);
+        ddx = (uv_x - uv_center) / epsilon;
+    }
+    
+    d = (screen_uv + float2(0.0, epsilon)) * 2.0 - 1.0;
+    float4 target_y = mul(camera_info.screen_to_camera, float4(d, 1, 1));
+    float4 direction_y = mul(camera_info.camera_to_world, float4(target_y.xyz, 0));
+    
+    RayDesc ray_y;
+    ray_y.Origin = camera_pos;
+    ray_y.Direction = normalize(direction_y.xyz);
+    ray_y.TMin = 0.001;
+    ray_y.TMax = 10000.0;
+    
+    RayPayload payload_y;
+    payload_y.color = float3(0,0,0);
+    payload_y.hit = false;
+    payload_y.instance_id = 0xFFFFFFFF;
+    payload_y.hit_distance = 10000.0;
+    payload_y.depth = 100;
+    payload_y.throughput = 0.0;
+    payload_y.inside_material = false;
+    TraceRay(as, RAY_FLAG_NONE, 0xFF, 0, 1, 0, ray_y, payload_y);
+    
+    float2 ddy = float2(0.0, 0.0);
+    
+    if (payload_y.hit && payload_y.instance_id == InstanceID()) {
+        float3 hit_y = camera_pos + ray_y.Direction * payload_y.hit_distance;
+        float2 uv_y = GetTextureCoords(hit_y, tex_info);
+        ddy = (uv_y - uv_center) / epsilon;
+    }
+    
+    return float2(length(ddx), length(ddy));
 }
+
+float CalculateAnisotropicMipLevel(float2 derivatives, TextureInfo tex_info_data) {
+    float max_deriv = max(derivatives.x, derivatives.y);
+    float min_deriv = min(derivatives.x, derivatives.y);
+    max_deriv *= 0.02;
+    min_deriv *= 0.02;
+    float aspect = max_deriv / max(min_deriv, 0.0001);
+    float aniso_level = min(2.0, floor(0.3 * log2(aspect + 1.0)));
+    float base_level = log2(max_deriv * tex_info_data.width * 0.3);
+    base_level = clamp(base_level, 0.0, (float)tex_info_data.mip_levels);
+    float final_level = base_level - aniso_level * 0.3;
+    final_level = clamp(final_level, 0.0, (float)tex_info_data.mip_levels);
+    final_level = max(0.0, final_level - 1.0);
+    return final_level;
+}
+
+float3 SampleTextureAnisotropic(uint texture_index, float2 uv, float2 derivatives, float aniso_level) {
+    TextureInfo info = texture_infos[texture_index];
+    float max_deriv = max(derivatives.x, derivatives.y);
+    float min_deriv = min(derivatives.x, derivatives.y);
+    float major_length = max_deriv * info.width * 0.02;
+    float minor_length = min_deriv * info.width * 0.02;
+    float ratio = major_length / max(minor_length, 0.0001);
+    float samples = min(4.0, ratio);
+    samples = max(1.0, samples);
+    float3 total_color = float3(0,0,0);
+    float base_level = log2(major_length) - 1.0;
+    base_level = clamp(base_level, 0.0, (float)info.mip_levels);
+    float sample_step = 0.5 / (info.width * max(max_deriv, 0.0001));
+    for (float i = 0; i < samples; i++) {
+        float offset = (i + 0.5) / samples - 0.5;
+        float2 sample_uv = uv;
+        if (derivatives.x > derivatives.y) {
+            sample_uv.x += offset * sample_step;
+        } else {
+            sample_uv.y += offset * sample_step;
+        }
+        float mip = base_level - log2(samples) * 0.3;
+        mip = clamp(mip, 0.0, (float)info.mip_levels);
+        total_color += GetTextureColor(texture_index, sample_uv, mip);
+    }
+    return total_color / samples;
+}
+
 
 // =====================================================================================================================================
 // ================================================== geometry related =================================================================
@@ -192,15 +295,7 @@ float3 refract(float3 I, float3 N, float eta) {
 // ================================================== lighting related =================================================================
 // =====================================================================================================================================
 
-struct RayPayload {
-    float3 color;
-    bool hit;
-    uint instance_id;
-    float hit_distance;
-    uint depth;
-    float throughput;
-    bool inside_material;
-};
+
 struct PointLight {
     float3 position;
     float3 color;
@@ -417,17 +512,19 @@ void ClosestHitMain(inout RayPayload payload, in BuiltInTriangleIntersectionAttr
     uint2 pixel_coords = DispatchRaysIndex().xy;
     uint seed = RandomSeed(pixel_coords, payload.depth, accumulated_samples[pixel_coords]);
     
-    if (material_idx == 100) {// mipmap (hard-coded)
-        float3 camera_pos = WorldRayOrigin();
-        float3 view_dir = normalize(-WorldRayDirection());
-        float mip_lev = CalculateGroundMipLevel(hit_point, view_dir, camera_pos);
-        float ux = (hit_point.x + 10.0) / 20.0;
-        float uy = (hit_point.z + 10.0) / 20.0;
-        mat.base_color = GetTextureColor(7, float2(ux, uy), mip_lev);
-    }
-    if (mat.texture_info.type == 1 && mat.texture_info.texture_id >= 0) {// color texture
+    float3 camera_pos = WorldRayOrigin();
+    float2 screen_uv = float2(pixel_coords) / float2(DispatchRaysDimensions().xy);
+    screen_uv.y = 1.0 - screen_uv.y;
+
+    if (mat.texture_info.type == 1 && mat.texture_info.texture_id >= 0) {
         float2 uv = GetTextureCoords(hit_point, mat.texture_info);
-        mat.base_color = GetTextureColor(mat.texture_info.texture_id, uv);
+        TextureInfo tex_data = texture_infos[mat.texture_info.texture_id];
+        if (tex_data.mip_levels == 0) mat.base_color = GetTextureColor(mat.texture_info.texture_id, uv, 0);
+        else {
+            float2 derivatives = CalculateTextureDerivatives(hit_point, mat.texture_info, camera_pos, view_dir, screen_uv);
+            float aniso_level = CalculateAnisotropicMipLevel(derivatives, tex_data);
+            mat.base_color = SampleTextureAnisotropic(mat.texture_info.texture_id, uv, derivatives, aniso_level);
+        }
     }
     if (mat.texture_info.type == 3 && mat.texture_info.texture_id >= 0) {// height map
         float2 uv = GetTextureCoords(hit_point, mat.texture_info);

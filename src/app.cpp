@@ -225,10 +225,11 @@ void Application::OnInit() {
     
 //    auto ground = std::make_shared<Entity>(
 //		"meshes/cube.obj",
-//		Material(glm::vec3(0.4f, 0.4f, 0.4f), 0.8f, 0.0f, 0.0f, 1.5f, 0.0f, 0.0f, TextureType()),
+//		Material(glm::vec3(0.4f, 0.4f, 0.4f), 0.8f, 0.0f, 0.0f, 1.5f, 0.0f, 0.0f, TextureType(7, 1.0f/20.0f, 0.0f, 0.0f, 10.0f/20.0f, 0.0f, 0.0f, 1.0/20.0f, 10.0f/20.0f)),
 //		glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, -1.0f, 0.0f)), 
 //		glm::vec3(10.0f, 0.1f, 10.0f))
 //	);
+//	scene_->AddEntity(ground);
     
     // color texture version:
 //	auto ground = std::make_shared<Entity>(
@@ -496,7 +497,7 @@ void Application::OnInit() {
 	    "textures/texture7.png",
 	    "textures/texture8.png"
 	};
-	std::vector<int> mip_levels = {10, 0, 0, 0, 0, 0, 0, 10};
+	std::vector<int> mip_levels = {0, 0, 0, 0, 0, 0, 0, 10};
 	std::vector<float> texture_data_buffer_content;
 	
 	for (int tex_idx = 0; tex_idx < texture_paths.size(); ++tex_idx) {

@@ -223,6 +223,13 @@ void Application::OnInit() {
 
     // Add entities to the scene
     
+//    auto ground = std::make_shared<Entity>(
+//		"meshes/cube.obj",
+//		Material(glm::vec3(0.4f, 0.4f, 0.4f), 0.8f, 0.0f, 0.0f, 1.5f, 0.0f, 0.0f, TextureType()),
+//		glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, -1.0f, 0.0f)), 
+//		glm::vec3(10.0f, 0.1f, 10.0f))
+//	);
+    
     // color texture version:
 //	auto ground = std::make_shared<Entity>(
 //		"meshes/cube.obj",
@@ -486,9 +493,10 @@ void Application::OnInit() {
 	    "textures/texture4.png",
 	    "textures/texture5.png",
 	    "textures/texture6.png",
-	    "textures/texture7.png"
+	    "textures/texture7.png",
+	    "textures/texture8.png"
 	};
-	std::vector<int> mip_levels = {10, 0, 0, 0, 0, 0, 0};
+	std::vector<int> mip_levels = {10, 0, 0, 0, 0, 0, 0, 10};
 	std::vector<float> texture_data_buffer_content;
 	
 	for (int tex_idx = 0; tex_idx < texture_paths.size(); ++tex_idx) {
@@ -912,7 +920,6 @@ void Application::RenderInfoOverlay() {
     ImGui::SeparatorText("Camera");
     ImGui::Text("Position: (%.2f, %.2f, %.2f)", camera_pos_.x, camera_pos_.y, camera_pos_.z);
     ImGui::Text("Direction: (%.2f, %.2f, %.2f)", camera_front_.x, camera_front_.y, camera_front_.z);
-    ImGui::Text("Yaw: %.1f掳  Pitch: %.1f掳", yaw_, pitch_);
     ImGui::Text("Speed: %.3f", camera_speed_);
     ImGui::Text("Sensitivity: %.2f", mouse_sensitivity_);
 

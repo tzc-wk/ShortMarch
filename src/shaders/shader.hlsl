@@ -126,7 +126,7 @@ float2 GetTextureCoords(float3 position, TextureType tex_info) {
 float CalculateGroundMipLevel(float3 hit_point, float3 view_dir, float3 camera_pos) {
     const float GROUND_SIZE = 20.0;
     const float TEXTURE_SIZE = 1024.0;
-    const float PIXEL_ANGLE = 0.0003;
+    const float PIXEL_ANGLE = 0.0007;
     float ray_length = length(hit_point - camera_pos);
     float cos_theta = abs(dot(float3(0,1,0), -view_dir));
     cos_theta = max(cos_theta, 0.001);
@@ -423,7 +423,7 @@ void ClosestHitMain(inout RayPayload payload, in BuiltInTriangleIntersectionAttr
         float mip_lev = CalculateGroundMipLevel(hit_point, view_dir, camera_pos);
         float ux = (hit_point.x + 10.0) / 20.0;
         float uy = (hit_point.z + 10.0) / 20.0;
-        mat.base_color = GetTextureColor(0, float2(ux, uy), mip_lev);
+        mat.base_color = GetTextureColor(7, float2(ux, uy), mip_lev);
     }
     if (mat.texture_info.type == 1 && mat.texture_info.texture_id >= 0) {// color texture
         float2 uv = GetTextureCoords(hit_point, mat.texture_info);

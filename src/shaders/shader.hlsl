@@ -131,25 +131,20 @@ float3 GetTextureColor(uint texture_index, float2 uv, float lev = 0) {
     return float3(r, g, b);
 }
 float2 GetTextureCoords(float3 position, TextureType tex_info) {
-    float u = tex_info.c1 * position.x + tex_info.c2 * position.y + 
-              tex_info.c3 * position.z + tex_info.c4;
-    float v = tex_info.c5 * position.x + tex_info.c6 * position.y + 
-              tex_info.c7 * position.z + tex_info.c8;
+    float u = tex_info.c1 * position.x + tex_info.c2 * position.y + tex_info.c3 * position.z + tex_info.c4;
+    float v = tex_info.c5 * position.x + tex_info.c6 * position.y + tex_info.c7 * position.z + tex_info.c8;
     return float2(u, v);
 }
 float2 CalculateTextureDerivatives(float3 hit_point, TextureType tex_info, float3 camera_pos, float3 ray_dir, float2 screen_uv) {
     float epsilon = 0.001;
-    
     float2 d = (screen_uv + float2(epsilon, 0.0)) * 2.0 - 1.0;
     float4 target_x = mul(camera_info.screen_to_camera, float4(d, 1, 1));
     float4 direction_x = mul(camera_info.camera_to_world, float4(target_x.xyz, 0));
-    
     RayDesc ray_x;
     ray_x.Origin = camera_pos;
     ray_x.Direction = normalize(direction_x.xyz);
     ray_x.TMin = 0.001;
     ray_x.TMax = 10000.0;
-    
     RayPayload payload_x;
     payload_x.color = float3(0,0,0);
     payload_x.hit = false;
@@ -159,26 +154,21 @@ float2 CalculateTextureDerivatives(float3 hit_point, TextureType tex_info, float
     payload_x.throughput = 0.0;
     payload_x.inside_material = false;
     TraceRay(as, RAY_FLAG_NONE, 0xFF, 0, 1, 0, ray_x, payload_x);
-    
     float2 uv_center = GetTextureCoords(hit_point, tex_info);
     float2 ddx = float2(0.0, 0.0);
-    
     if (payload_x.hit && payload_x.instance_id == InstanceID()) {
         float3 hit_x = camera_pos + ray_x.Direction * payload_x.hit_distance;
         float2 uv_x = GetTextureCoords(hit_x, tex_info);
         ddx = (uv_x - uv_center) / epsilon;
     }
-    
     d = (screen_uv + float2(0.0, epsilon)) * 2.0 - 1.0;
     float4 target_y = mul(camera_info.screen_to_camera, float4(d, 1, 1));
     float4 direction_y = mul(camera_info.camera_to_world, float4(target_y.xyz, 0));
-    
     RayDesc ray_y;
     ray_y.Origin = camera_pos;
     ray_y.Direction = normalize(direction_y.xyz);
     ray_y.TMin = 0.001;
     ray_y.TMax = 10000.0;
-    
     RayPayload payload_y;
     payload_y.color = float3(0,0,0);
     payload_y.hit = false;
@@ -188,18 +178,14 @@ float2 CalculateTextureDerivatives(float3 hit_point, TextureType tex_info, float
     payload_y.throughput = 0.0;
     payload_y.inside_material = false;
     TraceRay(as, RAY_FLAG_NONE, 0xFF, 0, 1, 0, ray_y, payload_y);
-    
     float2 ddy = float2(0.0, 0.0);
-    
     if (payload_y.hit && payload_y.instance_id == InstanceID()) {
         float3 hit_y = camera_pos + ray_y.Direction * payload_y.hit_distance;
         float2 uv_y = GetTextureCoords(hit_y, tex_info);
         ddy = (uv_y - uv_center) / epsilon;
     }
-    
     return float2(length(ddx), length(ddy));
 }
-
 float CalculateAnisotropicMipLevel(float2 derivatives, TextureInfo tex_info_data) {
     float max_deriv = max(derivatives.x, derivatives.y);
     float min_deriv = min(derivatives.x, derivatives.y);
@@ -214,7 +200,6 @@ float CalculateAnisotropicMipLevel(float2 derivatives, TextureInfo tex_info_data
     final_level = max(0.0, final_level - 1.0);
     return final_level;
 }
-
 float3 SampleTextureAnisotropic(uint texture_index, float2 uv, float2 derivatives, float aniso_level) {
     TextureInfo info = texture_infos[texture_index];
     float max_deriv = max(derivatives.x, derivatives.y);
@@ -231,11 +216,8 @@ float3 SampleTextureAnisotropic(uint texture_index, float2 uv, float2 derivative
     for (float i = 0; i < samples; i++) {
         float offset = (i + 0.5) / samples - 0.5;
         float2 sample_uv = uv;
-        if (derivatives.x > derivatives.y) {
-            sample_uv.x += offset * sample_step;
-        } else {
-            sample_uv.y += offset * sample_step;
-        }
+        if (derivatives.x > derivatives.y) sample_uv.x += offset * sample_step;
+        else sample_uv.y += offset * sample_step;
         float mip = base_level - log2(samples) * 0.3;
         mip = clamp(mip, 0.0, (float)info.mip_levels);
         total_color += GetTextureColor(texture_index, sample_uv, mip);
@@ -288,9 +270,7 @@ float3 reflect(float3 I, float3 N) {return I - 2.0 * dot(I, N) * N;}
 float3 refract(float3 I, float3 N, float eta) {
     float NdotI = dot(N, I);
     float k = 1.0 - eta * eta * (1.0 - NdotI * NdotI);
-    if (k < 0.0) {
-        return reflect(-I, N);
-    }
+    if (k < 0.0) return reflect(-I, N);
     return eta * I - (eta * NdotI + sqrt(k)) * N;
 }
 
@@ -413,40 +393,29 @@ float3 CalculateAreaLightContribution(float3 hit_point, float3 normal, Material 
 float3 SampleRandomDirection(float3 normal, float roughness, inout uint seed) {
     float u1 = Random(seed);
     float u2 = Random(seed);
-    
     float phi = 2.0 * PI * u1;
     float cosTheta = pow(u2, 1.0 / (roughness + 0.05));
     float sinTheta = sqrt(1.0 - cosTheta * cosTheta);
-    
     float3 tangent, bitangent;
-    if (abs(normal.x) > abs(normal.y)) {
-        tangent = normalize(cross(float3(0, 1, 0), normal));
-    } else {
-        tangent = normalize(cross(float3(1, 0, 0), normal));
-    }
+    if (abs(normal.x) > abs(normal.y)) tangent = normalize(cross(float3(0, 1, 0), normal));
+    else tangent = normalize(cross(float3(1, 0, 0), normal));
     bitangent = cross(normal, tangent);
-    
     float3 localDir = float3(sinTheta * cos(phi), sinTheta * sin(phi), cosTheta);
     return localDir.x * tangent + localDir.y * bitangent + localDir.z * normal;
 }
-
 float pdfRandomDirection(float3 dir, float3 normal, float roughness) {
     float cosTheta = dot(dir, normal);
     if (cosTheta <= 0.0) return 0.0;
     return cosTheta / PI;
 }
-
 float3 CalculateBRDFDirectLight(float3 hit_point, float3 normal, Material mat, float3 view_dir, inout uint seed) {
     float3 total_light = float3(0, 0, 0);
-    
     float3 random_dir = SampleRandomDirection(normal, mat.roughness, seed);
-    
     RayDesc test_ray;
     test_ray.Origin = hit_point + normal * 0.001;
     test_ray.Direction = random_dir;
     test_ray.TMin = 0.001;
     test_ray.TMax = 10000.0;
-    
     RayPayload test_payload;
     test_payload.color = float3(0, 0, 0);
     test_payload.hit = false;
@@ -455,46 +424,33 @@ float3 CalculateBRDFDirectLight(float3 hit_point, float3 normal, Material mat, f
     test_payload.depth = 100;
     test_payload.throughput = 0.0;
     test_payload.inside_material = false;
-    
     TraceRay(as, RAY_FLAG_NONE, 0xFF, 0, 1, 0, test_ray, test_payload);
-    
-    if (test_payload.hit) {
-        return total_light;
-    }
-    
+    if (test_payload.hit) return total_light;
     for (uint i = 0; i < NUMBER_OF_AREA_LIGHTS; i++) {
         AreaLight light = area_lights[i];
-        
         float3 light_normal = light.normal;
         float denom = dot(random_dir, light_normal);
         if (abs(denom) < 1e-6) continue;
-        
         float3 to_plane = light.center - hit_point;
         float t = dot(to_plane, light_normal) / denom;
         if (t <= 0.001) continue;
-        
         float3 plane_hit = hit_point + random_dir * t;
         float3 local_pos = plane_hit - light.center;
-        
         float3 light_up = normalize(cross(light.normal, light.left));
         float proj_up = dot(local_pos, light_up);
         float proj_left = dot(local_pos, light.left);
-        
         if (abs(proj_up) <= light.height * 0.5 && abs(proj_left) <= light.width * 0.5) {
             float3 light_sample = plane_hit;
             float3 to_light = light_sample - hit_point;
             float distance = length(to_light);
             float3 light_dir = normalize(to_light);
-            
             float ndotl = max(0.0, dot(normal, light_dir));
             if (ndotl <= 0.0) continue;
-            
             RayDesc shadow_ray;
             shadow_ray.Origin = hit_point + normal * 0.001;
             shadow_ray.Direction = light_dir;
             shadow_ray.TMin = 0.001;
             shadow_ray.TMax = distance - 0.002;
-            
             RayPayload shadow_payload;
             shadow_payload.color = float3(0, 0, 0);
             shadow_payload.hit = false;
@@ -503,68 +459,23 @@ float3 CalculateBRDFDirectLight(float3 hit_point, float3 normal, Material mat, f
             shadow_payload.depth = 100;
             shadow_payload.throughput = 0.0;
             shadow_payload.inside_material = false;
-            
             TraceRay(as, RAY_FLAG_FORCE_OPAQUE | RAY_FLAG_ACCEPT_FIRST_HIT_AND_END_SEARCH, 
                      0xFF, 0, 0, 0, shadow_ray, shadow_payload);
-            
             if (shadow_payload.hit) continue;
-            
             float attenuation = light.intensity / (distance * distance + 0.001);
             float diffuse_factor = 1.0 - mat.metallic;
             float3 diffuse = attenuation * light.color * mat.base_color * ndotl * diffuse_factor;
-            
             float3 half_vector = normalize(light_dir + view_dir);
             float ndoth = max(0.0, dot(normal, half_vector));
             float specular_power = max(1.0, 32.0 * (1.0 - mat.roughness));
             float specular_intensity = pow(ndoth, specular_power);
             float metallic_factor = 0.2 + mat.metallic * 0.8;
             float3 specular = attenuation * light.color * mat.base_color * specular_intensity * metallic_factor;
-            
             float3 contribution = diffuse + specular;
             float pdf_brdf = pdfRandomDirection(light_dir, normal, mat.roughness);
-            
-            if (pdf_brdf > 1e-6) {
-                total_light += contribution / pdf_brdf;
-            }
+            if (pdf_brdf > 1e-6) total_light += contribution / pdf_brdf;
         }
     }
-    
-    for (uint i = 0; i < NUMBER_OF_POINT_LIGHTS; i++) {
-        PointLight light = point_lights[i];
-        float3 light_dir = normalize(light.position - hit_point);
-        
-        float dot_dir = dot(random_dir, light_dir);
-        float light_radius = 0.1;
-        float distance = length(light.position - hit_point);
-        float angular_threshold = light_radius / distance;
-        
-        if (dot_dir < (1.0 - angular_threshold * angular_threshold * 0.5)) continue;
-        
-        float ndotl = max(0.0, dot(normal, light_dir));
-        if (ndotl <= 0.0) continue;
-        
-        float shadow_factor = TestShadow(hit_point, light.position);
-        if (shadow_factor <= 0.001) continue;
-        
-        float attenuation = light.intensity / (distance * distance + 0.001);
-        float diffuse_factor = 1.0 - mat.metallic;
-        float3 diffuse = attenuation * light.color * mat.base_color * ndotl * diffuse_factor * shadow_factor;
-        
-        float3 half_vector = normalize(light_dir + view_dir);
-        float ndoth = max(0.0, dot(normal, half_vector));
-        float specular_power = max(1.0, 32.0 * (1.0 - mat.roughness));
-        float specular_intensity = pow(ndoth, specular_power);
-        float metallic_factor = 0.2 + mat.metallic * 0.8;
-        float3 specular = attenuation * light.color * mat.base_color * specular_intensity * metallic_factor * shadow_factor;
-        
-        float3 contribution = diffuse + specular;
-        float pdf_brdf = pdfRandomDirection(light_dir, normal, mat.roughness);
-        
-        if (pdf_brdf > 1e-6) {
-            total_light += contribution / pdf_brdf;
-        }
-    }
-    
     return total_light;
 }
 float3 CalculateDirectLight(float3 hit_point, float3 normal, Material mat, float3 view_dir, inout uint seed) {
@@ -670,11 +581,9 @@ void ClosestHitMain(inout RayPayload payload, in BuiltInTriangleIntersectionAttr
     }
     uint2 pixel_coords = DispatchRaysIndex().xy;
     uint seed = RandomSeed(pixel_coords, payload.depth, accumulated_samples[pixel_coords]);
-    
     float3 camera_pos = WorldRayOrigin();
     float2 screen_uv = float2(pixel_coords) / float2(DispatchRaysDimensions().xy);
     screen_uv.y = 1.0 - screen_uv.y;
-
     if (mat.texture_info.type == 1 && mat.texture_info.texture_id >= 0) {
         float2 uv = GetTextureCoords(hit_point, mat.texture_info);
         TextureInfo tex_data = texture_infos[mat.texture_info.texture_id];
@@ -692,7 +601,6 @@ void ClosestHitMain(inout RayPayload payload, in BuiltInTriangleIntersectionAttr
         float height = mat.texture_info.c9 * grayscale + mat.texture_info.c10;
         hit_point = hit_point + height * norm;
     }
-
     float3 direct_light = CalculateDirectLight(hit_point, norm, mat, view_dir, seed);
     payload.color = direct_light * payload.throughput;
     if (payload.depth < MAX_DEPTH) {
@@ -746,20 +654,16 @@ void ClosestHitMain(inout RayPayload payload, in BuiltInTriangleIntersectionAttr
                     float3 scatter_pos = hit_point - norm * 0.001 + refract_dir * l;
                     float g = mat.anisotropy_g;
                     float cos_theta;
-                    if (abs(g) < 0.001) {
-                        cos_theta = 1.0 - 2.0 * Random(seed);
-                    } else {
+                    if (abs(g) < 0.001) cos_theta = 1.0 - 2.0 * Random(seed);
+                    else {
                         float t = (1.0 - g * g) / (1.0 - g + 2.0 * g * Random(seed));
                         cos_theta = (1.0 + g * g - t * t) / (2.0 * g);
                     }
                     float sin_theta = sqrt(max(0.0, 1.0 - cos_theta * cos_theta));
                     float phi = 2.0 * PI * Random(seed);
                     float3 u, v;
-                    if (abs(refract_dir.x) > 0.1) {
-                        u = normalize(cross(refract_dir, float3(0, 1, 0)));
-                    } else {
-                        u = normalize(cross(refract_dir, float3(1, 0, 0)));
-                    }
+                    if (abs(refract_dir.x) > 0.1) u = normalize(cross(refract_dir, float3(0, 1, 0)));
+                    else u = normalize(cross(refract_dir, float3(1, 0, 0)));
                     v = cross(refract_dir, u);
                     float3 scatter_dir = sin_theta * cos(phi) * u + sin_theta * sin(phi) * v + cos_theta * refract_dir;
                     scatter_dir = normalize(scatter_dir);
